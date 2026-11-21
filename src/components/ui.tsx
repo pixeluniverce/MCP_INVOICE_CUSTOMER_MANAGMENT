@@ -38,11 +38,11 @@ export function Card({ title, right, children, className = "" }: { title?: React
   return <div className={`card ${className}`}>{(title || right) && <div className="flex items-center justify-between gap-2 mb-3"><h2 className="font-semibold">{title}</h2>{right}</div>}{children}</div>;
 }
 export function Stat({ label, value, tone, href }: { label: string; value: ReactNode; tone?: "green" | "red" | "blue"; href?: string }) {
-  const c = tone === "green" ? "text-green-600" : tone === "red" ? "text-orange-600" : tone === "blue" ? "text-blue-600" : "text-gray-900";
+  const c = tone === "green" ? "text-green-600" : tone === "red" ? "text-orange-600" : tone === "blue" ? "text-primary" : "text-gray-900";
   const inner = <div className="card hover:shadow-md transition"><div className="text-xs text-gray-500">{label}</div><div className={`text-xl md:text-2xl font-bold mt-1 ${c}`}>{value}</div></div>;
   return href ? <Link href={href}>{inner}</Link> : inner;
 }
-const TONE: any = { PAID: "bg-green-100 text-green-700", ACTIVE: "bg-green-100 text-green-700", DELIVERED: "bg-green-100 text-green-700", READ: "bg-emerald-100 text-emerald-700", SENT: "bg-blue-100 text-blue-700",
+const TONE: any = { PAID: "bg-green-100 text-green-700", ACTIVE: "bg-green-100 text-green-700", DELIVERED: "bg-green-100 text-green-700", READ: "bg-emerald-100 text-emerald-700", SENT: "bg-blue-100 text-primary",
   UNPAID: "bg-red-100 text-red-700", FAILED: "bg-red-100 text-red-700", REVERSED: "bg-gray-200 text-gray-600", PARTIAL: "bg-orange-100 text-orange-700", PENDING: "bg-yellow-100 text-yellow-700" };
 export function Badge({ s }: { s: string }) { return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${TONE[s] || "bg-gray-100 text-gray-700"}`}>{s === "PARTIAL" ? "PARTIALLY PAID" : s}</span>; }
 export function Pager({ page, total, size = 25, onPage }: { page: number; total: number; size?: number; onPage: (p: number) => void }) {
@@ -84,11 +84,11 @@ export function Shell({ nav, brand, user, children }: { nav: { href: string; lab
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }
   return (
     <div className="min-h-screen">
-      <aside className={`fixed inset-y-0 left-0 z-30 w-60 bg-white border-r border-gray-200 flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
-        <div className="h-14 flex items-center gap-2 px-4 border-b border-gray-100 font-bold text-blue-700"><img src="/api/logo" alt="" className="h-9 max-w-[56px] object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} /><span className="leading-tight text-sm">{brand}</span></div>
+      <aside className={`fixed inset-y-0 left-0 z-30 w-60 flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`} style={{ background: "var(--sidebar-bg)", color: "var(--sidebar-text)", borderRight: "1px solid var(--sidebar-border)" }}>
+        <div className="h-14 flex items-center gap-2 px-4 font-bold" style={{ borderBottom: "1px solid var(--sidebar-border)" }}><img src="/api/logo" alt="" className="h-9 max-w-[56px] object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} /><span className="leading-tight text-sm">{brand}</span></div>
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {nav.map(n => { const active = n.href === root ? path === root : path.startsWith(n.href);
-            return <Link key={n.href} href={n.href} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${active ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-700 hover:bg-gray-100"}`}><span>{n.icon}</span>{n.label}</Link>; })}
+            return <Link key={n.href} href={n.href} style={active ? { background: "var(--sidebar-active-bg)", color: "var(--sidebar-active-text)" } : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${active ? "font-semibold" : "hover:bg-[var(--sidebar-hover)]"}`}><span>{n.icon}</span>{n.label}</Link>; })}
         </nav>
       </aside>
       {open && <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setOpen(false)} />}

@@ -22,7 +22,7 @@ function CustomerPicker({ value, onChange, disabled }: { value: any; onChange: (
         <div className="mt-2 max-h-64 overflow-y-auto divide-y">
           {loading && !data && <div className="p-3 text-sm text-gray-400">Loading…</div>}
           {(data?.rows || []).filter((c: any) => c.active).map((c: any) => (
-            <button type="button" key={c.id} className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm" onClick={() => { onChange(c); setOpen(false); setS(""); }}>
+            <button type="button" key={c.id} className="w-full text-left px-3 py-2 hover:bg-primary-light text-sm" onClick={() => { onChange(c); setOpen(false); setS(""); }}>
               {c.name} <span className="text-gray-400">· {c.mobile}</span>{c.outstanding > 0.004 && <span className="text-orange-600 text-xs ml-1">due {inr(c.outstanding)}</span>}
             </button>))}
           {data && !data.rows.length && <div className="p-3 text-sm text-gray-400">No customer found</div>}
@@ -42,10 +42,10 @@ export default function InvoiceForm({ id }: { id?: string }) {
   const [f, setF] = useState<any>({ date: today(), due_date: "", place_of_supply: "", gst_enabled: false, gst_type: "CGST_SGST", cgst: 9, sgst: 9, igst: 18, other_charges: 0, other_label: "", less_amount: "", less_label: "", notes: "" });
   const [items, setItems] = useState<any[]>([{ ...blankItem }]);
   const [pay, setPay] = useState<any>({ amount: "", date: today(), mode: "Cash", reference: "" });
-  const [err, setErr] = useState(""), [busy, setBusy] = useState(false), loaded = useRef(false);
+  const [err, setErr] = useState(""), [busy, setBusy] = useState(false), loaded = useRef(false), [showLogo, setShowLogo] = useState(true), [showSig, setShowSig] = useState(false);
 
   // defaults for a NEW invoice
-  useEffect(() => { if (st && !id) setF((x: any) => ({ ...x, gst_enabled: !!st.gst_enabled, gst_type: st.gst_type || "CGST_SGST", cgst: st.cgst ?? 9, sgst: st.sgst ?? 9, igst: st.igst ?? 18 })); }, [st]);
+  useEffect(() => { if (st && !id) { setShowLogo(st.inv_show_logo !== false); setShowSig(!!st.inv_show_signature); } if (st && !id) setF((x: any) => ({ ...x, gst_enabled: !!st.gst_enabled, gst_type: st.gst_type || "CGST_SGST", cgst: st.cgst ?? 9, sgst: st.sgst ?? 9, igst: st.igst ?? 18 })); }, [st]);
   useEffect(() => { if (!id) { const cid = sessionStorage.getItem("newInvoiceCustomer"); if (cid) { sessionStorage.removeItem("newInvoiceCustomer"); api(`/api/customers/${cid}`).then(pick).catch(() => {}); } } }, []);
   useEffect(() => { if (brs?.rows.length && !branchId) { const last = localStorage.getItem("branchId"); setBranchId(String(brs.rows.find((b: any) => String(b.id) === last)?.id || brs.rows[0].id)); } }, [brs]);
   // load an EXISTING invoice for editing
@@ -54,6 +54,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
     const inv = ex.invoice, its = ex.items, base = its[0] || {}, cg = inv.gst_enabled && inv.gst_type === "CGST_SGST", ig = inv.gst_enabled && inv.gst_type === "IGST";
     setCust({ id: inv.customer_id, name: inv.customer_name, mobile: inv.mobile });
     if (inv.branch_id) setBranchId(String(inv.branch_id));
+    setShowLogo(inv.show_logo ?? st.inv_show_logo !== false); setShowSig(inv.show_signature ?? !!st.inv_show_signature);
     setF({ date: inv.date, due_date: inv.due_date || "", place_of_supply: inv.place_of_supply || "", gst_enabled: inv.gst_enabled, gst_type: inv.gst_enabled ? inv.gst_type : st.gst_type || "CGST_SGST",
       cgst: cg ? base.cgst_rate : st.cgst ?? 9, sgst: cg ? base.sgst_rate : st.sgst ?? 9, igst: ig ? base.igst_rate : st.igst ?? 18, other_charges: inv.other_charges || 0, other_label: inv.other_label || "",
       less_amount: inv.less_amount || "", less_label: inv.less_label || "", notes: inv.notes || "" });
@@ -78,7 +79,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
   async function submit(override = false) {
     if (!cust) return setErr("Select a customer"); setBusy(true); setErr("");
     try {
-      const payload = { ...f, customer_id: cust.id, items, override_tax_type: override, branch_id: branchId, save_prices: savePrices };
+      const payload = { ...f, customer_id: cust.id, items, override_tax_type: override, branch_id: branchId, save_prices: savePrices, show_logo: showLogo, show_signature: showSig };
       const j = editing ? await api(`/api/invoices/${id}`, "PUT", { ...payload, reason }) : await api("/api/invoices", "POST", { ...payload, payment: paidNow > 0 ? pay : null });
       localStorage.setItem("branchId", branchId);
       router.push(`/admin/invoices/${editing ? id : j.id}`);
@@ -111,7 +112,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
             <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
               <div><label className="label">Qty</label><input className="input" type="number" step="any" value={it.qty} onChange={e => setI(n, "qty", e.target.value)} /></div>
               <div><label className="label">Unit</label><input className="input" value={it.unit} onChange={e => setI(n, "unit", e.target.value)} /></div>
-              <div><label className="label">Rate</label><input className="input" type="number" step="any" value={it.rate} onChange={e => setI(n, "rate", e.target.value)} />{it.product_id && prices[it.product_id] != null && <div className="text-[10px] text-blue-600 mt-0.5">Customer price{Number(it.rate) !== prices[it.product_id] ? " (changed)" : ""}</div>}</div>
+              <div><label className="label">Rate</label><input className="input" type="number" step="any" value={it.rate} onChange={e => setI(n, "rate", e.target.value)} />{it.product_id && prices[it.product_id] != null && <div className="text-[10px] text-primary mt-0.5">Customer price{Number(it.rate) !== prices[it.product_id] ? " (changed)" : ""}</div>}</div>
               <div><label className="label">Discount ₹</label><input className="input" type="number" step="any" value={it.discount} onChange={e => setI(n, "discount", e.target.value)} /></div>
               {f.gst_enabled && <div><label className="label">GST % (optional override)</label><input className="input" type="number" step="any" value={it.gst_rate} onChange={e => setI(n, "gst_rate", e.target.value)} placeholder="default" /></div>}
               <div className="flex items-end justify-between"><div className="text-sm font-medium">{inr((Number(it.qty) || 0) * (Number(it.rate) || 0) - (Number(it.discount) || 0))}</div>{items.length > 1 && <button className="btn-danger btn-sm" onClick={() => setItems(items.filter((_, i) => i !== n))}>Remove</button>}</div>
@@ -120,6 +121,10 @@ export default function InvoiceForm({ id }: { id?: string }) {
         <datalist id="plist">{(prods?.rows || []).map((p: any) => <option key={p.id} value={p.name} />)}</datalist>
         <button className="btn mt-3" onClick={() => setItems([...items, { ...blankItem }])}>+ Add row</button>
         {cust && <label className="flex items-center gap-2 text-sm mt-3"><input type="checkbox" checked={savePrices} onChange={e => setSavePrices(e.target.checked)} /> Save these rates as {cust.name}&apos;s special prices</label>}
+      </Card>
+      <Card title="Print options for this invoice">
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showLogo} onChange={e => setShowLogo(e.target.checked)} /> Show my logo on this invoice {!st.logo && <span className="text-xs text-gray-400">(upload a logo in Settings first)</span>}</label>
+        <label className="flex items-center gap-2 text-sm mt-2"><input type="checkbox" checked={showSig} onChange={e => setShowSig(e.target.checked)} /> Show my signature on this invoice {!st.signature && <span className="text-xs text-gray-400">(upload a signature in Settings first)</span>}</label>
       </Card>
       <Card title="GST">
         <label className="flex items-center gap-2 font-medium"><input type="checkbox" checked={f.gst_enabled} onChange={e => setF({ ...f, gst_enabled: e.target.checked })} /> Enable GST</label>

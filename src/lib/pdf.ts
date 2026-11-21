@@ -4,16 +4,22 @@ import { fdate } from "./fmt";
 // Standard PDF fonts only support Latin characters; anything else (e.g. Gujarati) prints as "?".
 const clean = (s: any) => String(s ?? "").replace(/[^\x20-\x7E\xA0-\xFF]/g, "?");
 const rs = (n: any) => "Rs. " + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const BLUE = rgb(0.15, 0.39, 0.92), GREY = rgb(0.94, 0.95, 0.96), LINE = rgb(0.85, 0.87, 0.9), WHITE = rgb(1, 1, 1);
+const hexRgb = (h: string) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const LINE = rgb(0.85, 0.87, 0.9), WHITE = rgb(1, 1, 1);
 type Col = { h: string; w: number; a?: "r" };
 
 class Doc {
-  pdf!: PDFDocument; f: any; b: any; logo: any; page: any; y = 0; W = 595.28; H = 841.89; M = 40; co: any; title = "";
-  static async make(co: any, title: string, no?: string, date?: string) {
+  pdf!: PDFDocument; f: any; b: any; logo: any; sig: any; accent: any; tint: any; onAccent: any; page: any; y = 0; W = 595.28; H = 841.89; M = 40; co: any; title = "";
+  static async make(co: any, title: string, no?: string, date?: string, opts: { showLogo?: boolean; showSignature?: boolean } = {}) {
     const d = new Doc(); d.pdf = await PDFDocument.create();
     d.f = await d.pdf.embedFont(StandardFonts.Helvetica); d.b = await d.pdf.embedFont(StandardFonts.HelveticaBold);
     d.co = co; d.title = title;
-    if (co.logo) { try { const m = /^data:image\/(png|jpeg);base64,(.+)$/.exec(co.logo); if (m) d.logo = m[1] === "png" ? await d.pdf.embedPng(Buffer.from(m[2], "base64")) : await d.pdf.embedJpg(Buffer.from(m[2], "base64")); } catch { d.logo = null; } }
+    const hex = /^#[0-9a-fA-F]{6}$/.test(co.inv_color || "") ? co.inv_color : "#2563eb", [r, g, b] = hexRgb(hex);
+    d.accent = rgb(r / 255, g / 255, b / 255); d.tint = rgb((r + (255 - r) * 0.9) / 255, (g + (255 - g) * 0.9) / 255, (b + (255 - b) * 0.9) / 255);
+    d.onAccent = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.65 ? rgb(0.07, 0.09, 0.15) : rgb(1, 1, 1);
+    const img = async (data: string) => { const m = /^data:image\/(png|jpeg);base64,(.+)$/.exec(data || ""); if (!m) return null; try { return m[1] === "png" ? await d.pdf.embedPng(Buffer.from(m[2], "base64")) : await d.pdf.embedJpg(Buffer.from(m[2], "base64")); } catch { return null; } };
+    if ((opts.showLogo ?? co.inv_show_logo ?? true) && co.logo) d.logo = await img(co.logo);
+    if ((opts.showSignature ?? co.inv_show_signature ?? false) && co.signature) d.sig = await img(co.signature);
     d.newPage(); d.head(no, date); return d;
   }
   newPage() { this.page = this.pdf.addPage([this.W, this.H]); this.y = this.H - this.M; }
@@ -24,14 +30,14 @@ class Doc {
   }
   fit(s: any, w: number, size = 8) { let t = clean(s); while (t.length > 1 && this.f.widthOfTextAtSize(t, size) > w) t = t.slice(0, -1); return t; }
   head(no?: string, date?: string) {
-    this.page.drawRectangle({ x: 0, y: this.H - 70, width: this.W, height: 70, color: BLUE });
+    this.page.drawRectangle({ x: 0, y: this.H - 70, width: this.W, height: 70, color: this.accent });
     let tx = this.M;
     if (this.logo) { const sc = Math.min(50 / this.logo.height, 120 / this.logo.width), w = this.logo.width * sc, h = this.logo.height * sc;
       this.page.drawRectangle({ x: this.M - 4, y: this.H - 35 - h / 2 - 4 - 8, width: w + 8, height: h + 8, color: WHITE });
       this.page.drawImage(this.logo, { x: this.M, y: this.H - 35 - h / 2 - 8, width: w, height: h }); tx = this.M + w + 16; }
-    this.t(this.co.name, tx, this.H - 36, { size: 20, b: true, color: WHITE });
+    this.t(this.co.name, tx, this.H - 36, { size: 20, b: true, color: this.onAccent });
     const sub = [this.co.address, this.co.mobile && "Mob: " + this.co.mobile, this.co.gstin && "GSTIN: " + this.co.gstin].filter(Boolean).join("  |  ");
-    this.t(this.fit(sub, this.W - tx - this.M), tx, this.H - 56, { size: 8, color: WHITE });
+    this.t(this.fit(sub, this.W - tx - this.M), tx, this.H - 56, { size: 8, color: this.onAccent });
     this.y = this.H - 95;
     this.t(this.title, this.M, this.y, { size: 15, b: true });
     if (no) this.t(`No: ${no}    Date: ${fdate(date)}`, this.M, this.y, { size: 9, align: "right", w: this.W - 2 * this.M });
@@ -44,7 +50,7 @@ class Doc {
   }
   table(cols: Col[], rows: any[][]) {
     const tw = cols.reduce((a, c) => a + c.w, 0);
-    const hdr = () => { this.page.drawRectangle({ x: this.M, y: this.y - 5, width: tw, height: 16, color: GREY }); let x = this.M; cols.forEach(c => { this.t(c.h, x + 3, this.y, { size: 8, b: true, align: c.a === "r" ? "right" : "left", w: c.w - 6 }); x += c.w; }); this.y -= 18; };
+    const hdr = () => { this.page.drawRectangle({ x: this.M, y: this.y - 5, width: tw, height: 16, color: this.tint }); let x = this.M; cols.forEach(c => { this.t(c.h, x + 3, this.y, { size: 8, b: true, align: c.a === "r" ? "right" : "left", w: c.w - 6 }); x += c.w; }); this.y -= 18; };
     this.ensure(50); hdr();
     for (const r of rows) {
       if (this.y < this.M + 40) { this.newPage(); hdr(); }
@@ -60,9 +66,12 @@ class Doc {
     this.y -= 4;
   }
   sign(leftLabel?: string) {
-    this.ensure(90); this.y -= 40; const yy = this.y;
-    this.page.drawLine({ start: { x: this.W - this.M - 170, y: yy }, end: { x: this.W - this.M, y: yy }, thickness: 0.6, color: LINE });
-    this.t("For " + this.co.name, this.W - this.M - 170, yy + 8, { size: 8, b: true }); this.t("Authorised Signatory", this.W - this.M - 170, yy - 11, { size: 8 });
+    const sh = this.sig ? 46 : 0, x = this.W - this.M - 170, label = this.co.signature_label || "Authorised Signatory";
+    this.ensure(90 + sh); this.y -= 40 + sh; const yy = this.y;
+    this.page.drawLine({ start: { x, y: yy }, end: { x: this.W - this.M, y: yy }, thickness: 0.6, color: LINE });
+    this.t("For " + this.co.name, x, yy + 8 + sh, { size: 8, b: true });
+    if (this.sig) { const sc = Math.min(40 / this.sig.height, 150 / this.sig.width); this.page.drawImage(this.sig, { x, y: yy + 4, width: this.sig.width * sc, height: this.sig.height * sc }); }
+    this.t(label, x, yy - 11, { size: 8 });
     if (leftLabel) { this.page.drawLine({ start: { x: this.M, y: yy }, end: { x: this.M + 170, y: yy }, thickness: 0.6, color: LINE }); this.t(leftLabel, this.M, yy - 11, { size: 8 }); }
   }
   async save() { return await this.pdf.save(); }
@@ -73,7 +82,7 @@ const custLines = (c: any) => [c.name, c.address, [c.city, c.state, c.pin].filte
 export async function invoicePdf(co: any, inv: any, items: any[], payments: any[]) {
   const gst = inv.gst_enabled;
   const br = inv.branch_snapshot || {};
-  const d = await Doc.make({ ...co, address: br.address || co.address, mobile: br.mobile || co.mobile, gstin: br.gstin || co.gstin }, gst ? "TAX INVOICE" : "INVOICE", inv.number, inv.date);
+  const d = await Doc.make({ ...co, address: br.address || co.address, mobile: br.mobile || co.mobile, gstin: br.gstin || co.gstin }, gst ? "TAX INVOICE" : "INVOICE", inv.number, inv.date, { showLogo: inv.show_logo ?? undefined, showSignature: inv.show_signature ?? undefined });
   d.twoCols(["Bill To:", ...custLines(inv.customer_snapshot || { name: inv.customer_name, mobile: inv.mobile })],
     [`Invoice No: ${inv.number}`, `Invoice Date: ${fdate(inv.date)}`, `Due Date: ${fdate(inv.due_date)}`, br.name && `Branch: ${br.name}`, inv.place_of_supply && `Place of Supply: ${inv.place_of_supply}`]);
   if (gst) {

@@ -14,7 +14,7 @@ export default function Dashboard() {
   if (!d) return <State loading={loading} err={err} />;
   const months = last12(), mv: any = Object.fromEntries(d.monthly.map((x: any) => [x.m, x.v])), maxM = Math.max(1, ...months.map(m => mv[m] || 0));
   const mix: any = Object.fromEntries(d.mix.map((x: any) => [x.pay_status, x])), mixTotal = Math.max(1, d.mix.reduce((a: number, x: any) => a + x.v, 0));
-  const sbars = [["Total Sales", d.sales, "bg-blue-500"], ["Total Received", d.received, "bg-green-500"], ["Total Outstanding", d.outstanding, "bg-orange-500"]] as const, maxS = Math.max(1, ...sbars.map(b => Math.abs(b[1] as number)));
+  const sbars = [["Total Sales", d.sales, "bg-primary"], ["Total Received", d.received, "bg-green-500"], ["Total Outstanding", d.outstanding, "bg-orange-500"]] as const, maxS = Math.max(1, ...sbars.map(b => Math.abs(b[1] as number)));
   const maxO = Math.max(1, ...d.top.map((x: any) => x.outstanding));
   return (
     <div className="space-y-4">
@@ -41,7 +41,7 @@ export default function Dashboard() {
         <Card title="Sales, received & outstanding">
           <div className="space-y-4 pt-2">{sbars.map(([l, v, c]) => <div key={l}><div className="flex justify-between text-sm mb-1"><span>{l}</span><b>{inr(v)}</b></div><div className="h-3 bg-gray-100 rounded-full"><div className={`h-3 rounded-full ${c} transition-all`} style={{ width: `${(Math.abs(v as number) / maxS) * 100}%` }} /></div></div>)}</div>
         </Card>
-        <Card title="Customers with outstanding (click to open)" right={<Link className="text-sm text-blue-600" href="/admin/outstanding">View all</Link>}>
+        <Card title="Customers with outstanding (click to open)" right={<Link className="text-sm text-primary" href="/admin/outstanding">View all</Link>}>
           {!d.top.length && <div className="text-sm text-gray-400">No outstanding balances 🎉</div>}
           <div className="space-y-2">{d.top.map((c: any) => <Link key={c.id} href={`/admin/customers/${c.id}`} className="block"><div className="flex justify-between text-sm"><span className="truncate">{c.name}</span><b className="text-orange-600">{inr(c.outstanding)}</b></div><div className="h-2 bg-gray-100 rounded-full"><div className="h-2 rounded-full bg-orange-500" style={{ width: `${(c.outstanding / maxO) * 100}%` }} /></div></Link>)}</div>
         </Card>

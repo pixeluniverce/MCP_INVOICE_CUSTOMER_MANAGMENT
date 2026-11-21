@@ -30,7 +30,7 @@ export function InvoiceList({ admin, cid, mode = "all", base, status0 }: { admin
       <Table head={head} empty={!loading && !rows.length}>
         {rows.map((r: any) => (
           <tr key={r.id} className="hover:bg-gray-50">
-            <td className="td font-medium"><Link className="text-blue-600" href={`${base}/${r.id}`}>{r.number}</Link></td>
+            <td className="td font-medium"><Link className="text-primary" href={`${base}/${r.id}`}>{r.number}</Link></td>
             {admin && mode === "all" && <td className="td"><Link className="hover:underline" href={`/admin/customers/${r.customer_id}`}>{r.customer_name}</Link></td>}
             {admin && mode === "all" && <td className="td">{r.branch_name || "-"}</td>}
             <td className="td">{fdate(r.date)}</td>
@@ -70,7 +70,7 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
       </div>
       <Card>
         <div className="flex flex-wrap justify-between gap-4">
-          <div><img src="/api/logo" alt="" className="h-12 mb-1 object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} /><div className="text-lg font-bold text-blue-700">{co.name}</div><div className="text-sm text-gray-600">{co.address}</div>{co.mobile && <div className="text-sm text-gray-600">Mob: {co.mobile}</div>}{co.gstin && <div className="text-sm text-gray-600">GSTIN: {co.gstin}</div>}</div>
+          <div>{i.show_logo !== false && <img src="/api/logo" alt="" className="h-12 mb-1 object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} />}<div className="text-lg font-bold text-primary" style={co.inv_color ? { color: co.inv_color } : undefined}>{co.name}</div><div className="text-sm text-gray-600">{co.address}</div>{co.mobile && <div className="text-sm text-gray-600">Mob: {co.mobile}</div>}{co.gstin && <div className="text-sm text-gray-600">GSTIN: {co.gstin}</div>}</div>
           <div className="text-sm sm:text-right"><div className="text-lg font-bold">{gst ? "TAX INVOICE" : "INVOICE"}</div><div>No: <b>{i.number}</b></div><div>Date: {fdate(i.date)}</div>{i.due_date && <div>Due: {fdate(i.due_date)}</div>}{i.branch_snapshot?.name && <div>Branch: {i.branch_snapshot.name}</div>}{i.place_of_supply && <div>Place of supply: {i.place_of_supply}</div>}<div className="mt-1"><Badge s={i.pay_status} /></div></div>
         </div>
         <div className="mt-4 text-sm"><div className="text-xs text-gray-500">Bill to</div><div className="font-semibold">{s.name || i.customer_name}</div><div>{[s.address, s.city, s.state, s.pin].filter(Boolean).join(", ")}</div><div>{s.mobile || i.mobile}{s.gstin ? ` · GSTIN ${s.gstin}` : ""}</div></div>
@@ -88,6 +88,7 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
           {i.less_amount > 0 ? <div className="border-t pt-1 space-y-1"><Row l="Gross total" v={i.gross_total ?? i.grand_total + i.less_amount} /><Row l={`Less: ${i.less_label || "Discount"}`} v={-i.less_amount} /><Row l="Net payable" v={i.grand_total} b /></div> : <div className="border-t pt-1"><Row l="Grand total" v={i.grand_total} b /></div>}<Row l="Amount paid" v={i.paid} tone="green" /><Row l="Pending" v={i.pending} tone="red" b />
         </div>
         {i.notes && <p className="text-sm text-gray-600 mt-3">Notes: {i.notes}</p>}
+        {(i.show_signature ?? co.inv_show_signature) && co.has_signature && <div className="mt-4 text-right"><img src="/api/signature" alt="" className="h-12 inline-block object-contain" /><div className="text-xs text-gray-500">{co.signature_label || "Authorised Signatory"}</div></div>}
       </Card>
       <Card title="Payments against this invoice">
         <Table head={["Receipt", "Date", "Mode", "Reference", "Amount", ""]} empty={!payments.length}>
@@ -175,7 +176,7 @@ export function CustomerTable({ outstanding }: { outstanding?: boolean }) {
       <Table head={outstanding ? ["Customer", "Mobile", "Purchase", "Paid", "Outstanding", "Pending Bills", "Last Payment", ""] : ["Customer", "Mobile", "Purchase", "Paid", "Outstanding", "Bills", "Login", ""]} empty={!loading && !rows.length}>
         {rows.map((c: any) => (
           <tr key={c.id} className="hover:bg-gray-50">
-            <td className="td font-medium"><Link className="text-blue-600" href={`/admin/customers/${c.id}`}>{c.name}</Link>{!c.active && <span className="ml-1 text-xs text-gray-400">(inactive)</span>}</td>
+            <td className="td font-medium"><Link className="text-primary" href={`/admin/customers/${c.id}`}>{c.name}</Link>{!c.active && <span className="ml-1 text-xs text-gray-400">(inactive)</span>}</td>
             <td className="td">{c.mobile}</td><td className="td text-right">{inr(c.purchase)}</td><td className="td text-right"><Money v={c.paid} tone="green" /></td><td className="td text-right"><Money v={c.outstanding} tone="red" /></td>
             {outstanding ? <><td className="td">{c.pending_bills}</td><td className="td">{fdate(c.last_payment)}</td></> : <><td className="td">{c.bills}</td><td className="td">{c.login_id ? (c.login_active ? <Badge s="ACTIVE" /> : <Badge s="REVERSED" />) : <span className="text-gray-400">None</span>}</td></>}
             <td className="td text-right space-x-1">
@@ -234,7 +235,7 @@ export function CustomerPrices({ cid }: { cid: number }) {
       {msg && <div className="text-sm text-red-600 mb-2">{msg}</div>}
       <State loading={loading && !data} err={err} />
       <Table head={["Product", "Default rate", "Customer rate", ""]} empty={!loading && !data?.rows.length}>
-        {(data?.rows || []).map((r: any) => <tr key={r.product_id}><td className="td font-medium">{r.name}</td><td className="td text-right">{inr(r.default_rate)}</td><td className="td text-right text-blue-700 font-semibold">{inr(r.rate)}</td><td className="td text-right"><button className="btn-danger btn-sm" onClick={() => del(r.product_id)}>Remove</button></td></tr>)}
+        {(data?.rows || []).map((r: any) => <tr key={r.product_id}><td className="td font-medium">{r.name}</td><td className="td text-right">{inr(r.default_rate)}</td><td className="td text-right text-primary font-semibold">{inr(r.rate)}</td><td className="td text-right"><button className="btn-danger btn-sm" onClick={() => del(r.product_id)}>Remove</button></td></tr>)}
       </Table>
     </div>
   );

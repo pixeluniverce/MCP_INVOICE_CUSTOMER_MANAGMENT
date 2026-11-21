@@ -41,7 +41,7 @@ export default function CustomerPage() {
           </div> : <div className="space-y-3 text-sm"><div className="text-gray-500">No login yet. Customer can sign in with username or mobile number.</div>
             <div className="grid sm:grid-cols-2 gap-2"><div><label className="label">Username (blank = mobile)</label><input className="input" value={user} onChange={e => setUser(e.target.value)} /></div><div><label className="label">Temporary password</label><input className="input" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" /></div></div>
             <button className="btn-primary" onClick={() => login("create")}>Create Customer Login</button></div>}
-          {msg && <div className="text-sm mt-2 text-blue-700">{msg}</div>}
+          {msg && <div className="text-sm mt-2 text-primary">{msg}</div>}
         </Card>
       </div>
       <Card title="Special product prices for this customer"><CustomerPrices cid={Number(id)} /></Card>

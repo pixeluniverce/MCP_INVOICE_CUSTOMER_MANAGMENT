@@ -82,6 +82,17 @@ CREATE TABLE IF NOT EXISTS invoice_revisions(
   before_total NUMERIC(14,2), after_total NUMERIC(14,2), edited_at TIMESTAMPTZ NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS idx_rev_inv ON invoice_revisions(invoice_id);
 ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS logo TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS theme_primary TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS theme_sidebar_bg TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS theme_sidebar_text TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS theme_page_bg TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS inv_color TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS inv_show_logo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS inv_show_signature BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS signature TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS signature_label TEXT;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_logo BOOLEAN;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_signature BOOLEAN;
 
 -- First admin login: username admin / temporary password Admin@12345 (must be changed at first login)
 INSERT INTO users(username, password_hash, role, must_change)
