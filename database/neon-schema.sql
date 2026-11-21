@@ -1,7 +1,6 @@
 -- ==========================================================
 -- MAHADEV CEMENT PRODUCT - Neon PostgreSQL schema (FULL, new database)
--- Neon Console -> SQL Editor -> paste this whole file -> Run.
--- Safe to run more than once.
+-- Neon Console -> SQL Editor -> paste this whole file -> Run. Safe to run more than once.
 -- ==========================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -74,6 +73,14 @@ CREATE TABLE IF NOT EXISTS customer_prices(
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id);
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS branch_snapshot JSONB;
 CREATE INDEX IF NOT EXISTS idx_inv_branch ON invoices(branch_id);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS gross_total NUMERIC(14,2);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS less_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS less_label TEXT;
+UPDATE invoices SET gross_total=grand_total WHERE gross_total IS NULL;
+CREATE TABLE IF NOT EXISTS invoice_revisions(
+  id SERIAL PRIMARY KEY, invoice_id INTEGER NOT NULL REFERENCES invoices(id), edited_by INTEGER REFERENCES users(id), reason TEXT, snapshot JSONB,
+  before_total NUMERIC(14,2), after_total NUMERIC(14,2), edited_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS idx_rev_inv ON invoice_revisions(invoice_id);
 
 -- First admin login: username admin / temporary password Admin@12345 (must be changed at first login)
 INSERT INTO users(username, password_hash, role, must_change)

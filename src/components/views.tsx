@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { api, useApi, useDebounce, State, Card, Badge, Pager, Table, WaBtn, Money, sharePdf, inr, fdate, today } from "./ui";
+import { api, useApi, useDebounce, State, Card, Badge, Pager, Table, WaBtn, Money, sharePdf, inr, fdate, fdt, today } from "./ui";
 
 const MODES = ["Cash", "UPI", "Bank Transfer", "Cheque", "Other"];
 export { MODES };
@@ -41,6 +41,7 @@ export function InvoiceList({ admin, cid, mode = "all", base, status0 }: { admin
             <td className="td text-right space-x-1">
               <Link className="btn btn-sm" href={`${base}/${r.id}`}>View</Link>
               <a className="btn btn-sm" href={`/api/pdf/invoice/${r.id}`}>PDF</a>
+              {admin && <Link className="btn btn-sm" href={`/admin/invoices/${r.id}/edit`}>Edit</Link>}
               {admin && <><WaBtn type="invoice" id={r.id} label="" className="btn btn-sm" onDone={reload} />{r.pending > 0.004 && <Link className="btn btn-sm" href={`/admin/payments?customer_id=${r.customer_id}&invoice_id=${r.id}`}>Pay</Link>}</>}
             </td>
           </tr>
@@ -54,6 +55,7 @@ export function InvoiceList({ admin, cid, mode = "all", base, status0 }: { admin
 // ---------- Invoice detail ----------
 export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
   const { data, err, loading, reload } = useApi<any>(`/api/invoices/${id}`);
+  const { data: revs } = useApi<any>(admin ? `/api/invoices/${id}/revisions` : null);
   if (loading || err) return <State loading={loading} err={err} />;
   const { invoice: i, items, payments, company: co } = data; const s = i.customer_snapshot || {};
   const gst = i.gst_enabled;
@@ -63,7 +65,7 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
         <a className="btn-primary" href={`/api/pdf/invoice/${id}`}>Download PDF</a>
         <button className="btn" onClick={() => window.print()}>Print</button>
         <button className="btn" onClick={() => sharePdf(`/api/pdf/invoice/${id}`, `Invoice-${i.number}.pdf`)}>Share</button>
-        {admin && <><WaBtn type="invoice" id={i.id} label="Send Invoice on WhatsApp" className="btn-green" onDone={reload} />
+        {admin && <><Link className="btn" href={`/admin/invoices/${id}/edit`}>✏️ Edit Invoice</Link><WaBtn type="invoice" id={i.id} label="Send Invoice on WhatsApp" className="btn-green" onDone={reload} />
           {i.pending > 0.004 && <Link className="btn" href={`/admin/payments?customer_id=${i.customer_id}&invoice_id=${i.id}`}>Record Payment</Link>}</>}
       </div>
       <Card>
@@ -83,7 +85,7 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
           <Row l="Amount" v={i.subtotal} /><Row l="Discount" v={-i.discount_total} /><Row l="Taxable amount" v={i.taxable_total} />
           {gst && i.gst_type === "CGST_SGST" && <><Row l="CGST" v={i.cgst_total} /><Row l="SGST" v={i.sgst_total} /></>}{gst && i.gst_type === "IGST" && <Row l="IGST" v={i.igst_total} />}
           {i.other_charges > 0 && <Row l={i.other_label || "Additional charges"} v={i.other_charges} />}
-          <div className="border-t pt-1"><Row l="Grand total" v={i.grand_total} b /></div><Row l="Amount paid" v={i.paid} tone="green" /><Row l="Pending" v={i.pending} tone="red" b />
+          {i.less_amount > 0 ? <div className="border-t pt-1 space-y-1"><Row l="Gross total" v={i.gross_total ?? i.grand_total + i.less_amount} /><Row l={`Less: ${i.less_label || "Discount"}`} v={-i.less_amount} /><Row l="Net payable" v={i.grand_total} b /></div> : <div className="border-t pt-1"><Row l="Grand total" v={i.grand_total} b /></div>}<Row l="Amount paid" v={i.paid} tone="green" /><Row l="Pending" v={i.pending} tone="red" b />
         </div>
         {i.notes && <p className="text-sm text-gray-600 mt-3">Notes: {i.notes}</p>}
       </Card>
@@ -92,6 +94,11 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
           {payments.map((p: any) => <tr key={p.payment_id}><td className="td">{p.receipt_no}</td><td className="td">{fdate(p.date)}</td><td className="td">{p.mode}</td><td className="td">{p.reference || "-"}</td><td className="td text-right"><Money v={p.amount} tone="green" /></td><td className="td"><a className="btn btn-sm" href={`/api/pdf/receipt/${p.payment_id}`}>Receipt</a></td></tr>)}
         </Table>
       </Card>
+      {admin && !!revs?.rows?.length && <Card title="Edit history">
+        <div className="divide-y text-sm">{revs.rows.map((r: any) => <div key={r.id} className="py-2">
+          <div className="flex flex-wrap justify-between gap-2"><span><b>{r.username || "admin"}</b> · {fdt(r.edited_at)}</span><span>{inr(r.before_total)} → {inr(r.after_total)}</span></div>
+          <div className="text-gray-600">Reason: {r.reason}</div>
+          <details className="text-xs text-gray-500 mt-1"><summary className="cursor-pointer">Previous items</summary>{(r.snapshot?.items || []).map((x: any, n: number) => <div key={n}>{x.name} — {x.qty} {x.unit} × {inr(x.rate)}</div>)}</details></div>)}</div></Card>}
     </div>
   );
 }

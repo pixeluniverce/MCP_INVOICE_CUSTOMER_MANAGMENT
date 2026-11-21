@@ -81,7 +81,9 @@ export async function invoicePdf(co: any, inv: any, items: any[], payments: any[
   if (gst && inv.gst_type === "CGST_SGST") { tl.push(["CGST", rs(inv.cgst_total)], ["SGST", rs(inv.sgst_total)]); }
   if (gst && inv.gst_type === "IGST") tl.push(["IGST", rs(inv.igst_total)]);
   if (inv.other_charges > 0) tl.push([inv.other_label || "Additional Charges", rs(inv.other_charges)]);
-  tl.push(["Grand Total", rs(inv.grand_total), true], ["Amount Paid", rs(inv.paid)], ["Balance Due", rs(inv.pending), true]);
+  if (inv.less_amount > 0) tl.push(["Gross Total", rs(inv.gross_total ?? inv.grand_total + inv.less_amount)], ["Less: " + (inv.less_label || "Discount"), "- " + rs(inv.less_amount)], ["Net Payable", rs(inv.grand_total), true]);
+  else tl.push(["Grand Total", rs(inv.grand_total), true]);
+  tl.push(["Amount Paid", rs(inv.paid)], ["Balance Due", rs(inv.pending), true]);
   d.totals(tl);
   if (payments.length) { d.ensure(40); d.t("Payments received", d.M, d.y, { b: true }); d.y -= 14; d.table([{ h: "Receipt", w: 130 }, { h: "Date", w: 100 }, { h: "Mode", w: 100 }, { h: "Reference", w: 100 }, { h: "Amount", w: 85, a: "r" }], payments.map(p => [p.receipt_no, fdate(p.date), p.mode, p.reference || "-", p.amount.toFixed(2)])); }
   if (inv.notes) { d.ensure(30); d.t("Notes: " + inv.notes, d.M, d.y, { size: 8 }); d.y -= 12; }

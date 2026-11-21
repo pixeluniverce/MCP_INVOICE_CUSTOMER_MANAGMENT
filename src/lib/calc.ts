@@ -2,7 +2,7 @@
 import { HttpError } from "./errors";
 export const r2 = (n: number) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
-export function calcInvoice(i: { gst_enabled: boolean; gst_type: string; cgst: number; sgst: number; igst: number; other_charges?: number; items: any[] }) {
+export function calcInvoice(i: { gst_enabled: boolean; gst_type: string; cgst: number; sgst: number; igst: number; other_charges?: number; less_amount?: number; items: any[] }) {
   const gst = !!i.gst_enabled;
   const type = gst ? i.gst_type : "NONE";
   if (gst && !["CGST_SGST", "IGST"].includes(type)) throw new HttpError(400, "Invalid GST type");
@@ -32,5 +32,9 @@ export function calcInvoice(i: { gst_enabled: boolean; gst_type: string; cgst: n
   const other = r2(Number(i.other_charges || 0));
   if (other < 0) throw new HttpError(400, "Additional charges cannot be negative");
   const t = { subtotal: sum("amount"), discount_total: sum("discount"), taxable_total: sum("taxable"), cgst_total: sum("cgst_amt"), sgst_total: sum("sgst_amt"), igst_total: sum("igst_amt") };
-  return { gst_type: type, items, ...t, other_charges: other, grand_total: r2(t.taxable_total + t.cgst_total + t.sgst_total + t.igst_total + other) };
+  const gross = r2(t.taxable_total + t.cgst_total + t.sgst_total + t.igst_total + other);
+  const less = r2(Number(i.less_amount || 0));
+  if (less < 0) throw new HttpError(400, "Less amount cannot be negative");
+  if (less > gross + 0.004) throw new HttpError(400, "Less amount cannot be more than the total");
+  return { gst_type: type, items, ...t, other_charges: other, gross_total: gross, less_amount: less, grand_total: r2(gross - less) };
 }
