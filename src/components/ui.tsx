@@ -85,7 +85,7 @@ export function Shell({ nav, brand, user, children }: { nav: { href: string; lab
   return (
     <div className="min-h-screen">
       <aside className={`fixed inset-y-0 left-0 z-30 w-60 bg-white border-r border-gray-200 flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
-        <div className="h-14 flex items-center px-4 border-b border-gray-100 font-bold text-blue-700">{brand}</div>
+        <div className="h-14 flex items-center gap-2 px-4 border-b border-gray-100 font-bold text-blue-700"><img src="/api/logo" alt="" className="h-9 max-w-[56px] object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} /><span className="leading-tight text-sm">{brand}</span></div>
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {nav.map(n => { const active = n.href === root ? path === root : path.startsWith(n.href);
             return <Link key={n.href} href={n.href} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${active ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-700 hover:bg-gray-100"}`}><span>{n.icon}</span>{n.label}</Link>; })}
@@ -97,6 +97,7 @@ export function Shell({ nav, brand, user, children }: { nav: { href: string; lab
           <button className="btn lg:hidden" aria-label="Menu" onClick={() => setOpen(true)}>☰</button>
           <div className="font-semibold lg:hidden truncate">{brand}</div>
           <div className="ml-auto text-sm text-gray-600 hidden sm:block">{user}</div>
+          <InstallButton />
           <button className="btn" onClick={logout}>Logout</button>
         </header>
         <main className="p-4 md:p-6 max-w-7xl mx-auto">{children}</main>
@@ -105,3 +106,22 @@ export function Shell({ nav, brand, user, children }: { nav: { href: string; lab
   );
 }
 export const Money = ({ v, tone }: { v: any; tone?: "green" | "red" }) => <span className={tone === "green" ? "text-green-600" : tone === "red" && Number(v) > 0.004 ? "text-orange-600 font-medium" : ""}>{inr(v)}</span>;
+
+// "Install App" button: appears when the browser allows installing (Chrome/Edge/Android); shows steps on iPhone/iPad.
+export function InstallButton() {
+  const [ev, setEv] = useState<any>(null), [ios, setIos] = useState(false), [installed, setInstalled] = useState(false), [tip, setTip] = useState(false);
+  useEffect(() => {
+    const h = (e: any) => { e.preventDefault(); setEv(e); };
+    window.addEventListener("beforeinstallprompt", h); window.addEventListener("appinstalled", () => setInstalled(true));
+    setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
+    if (window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone) setInstalled(true);
+    return () => window.removeEventListener("beforeinstallprompt", h);
+  }, []);
+  if (installed || (!ev && !ios)) return null;
+  return (
+    <div className="relative">
+      <button className="btn-primary" onClick={() => { if (ev) { ev.prompt(); setEv(null); } else setTip(!tip); }}>⬇ Install App</button>
+      {tip && <div className="absolute right-0 mt-2 w-64 bg-white border rounded-xl shadow-lg p-3 text-sm z-40">On iPhone / iPad: tap the <b>Share</b> button in Safari, then <b>Add to Home Screen</b>.</div>}
+    </div>
+  );
+}

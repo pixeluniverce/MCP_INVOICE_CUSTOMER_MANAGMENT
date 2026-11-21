@@ -1,6 +1,6 @@
 -- ==========================================================
 -- UPDATE ONLY (for a database that already has the first schema).
--- Adds: Branches, customer-wise prices, invoice "Less" amount, invoice edit history.
+-- Adds: Branches, customer-wise prices, invoice Less amount, edit history, company logo.
 -- Neon Console -> SQL Editor -> paste -> Run. Safe to run more than once.
 -- ==========================================================
 
@@ -21,3 +21,4 @@ CREATE TABLE IF NOT EXISTS invoice_revisions(
   id SERIAL PRIMARY KEY, invoice_id INTEGER NOT NULL REFERENCES invoices(id), edited_by INTEGER REFERENCES users(id), reason TEXT, snapshot JSONB,
   before_total NUMERIC(14,2), after_total NUMERIC(14,2), edited_at TIMESTAMPTZ NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS idx_rev_inv ON invoice_revisions(invoice_id);
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS logo TEXT;

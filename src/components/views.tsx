@@ -70,7 +70,7 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
       </div>
       <Card>
         <div className="flex flex-wrap justify-between gap-4">
-          <div><div className="text-lg font-bold text-blue-700">{co.name}</div><div className="text-sm text-gray-600">{co.address}</div>{co.mobile && <div className="text-sm text-gray-600">Mob: {co.mobile}</div>}{co.gstin && <div className="text-sm text-gray-600">GSTIN: {co.gstin}</div>}</div>
+          <div><img src="/api/logo" alt="" className="h-12 mb-1 object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} /><div className="text-lg font-bold text-blue-700">{co.name}</div><div className="text-sm text-gray-600">{co.address}</div>{co.mobile && <div className="text-sm text-gray-600">Mob: {co.mobile}</div>}{co.gstin && <div className="text-sm text-gray-600">GSTIN: {co.gstin}</div>}</div>
           <div className="text-sm sm:text-right"><div className="text-lg font-bold">{gst ? "TAX INVOICE" : "INVOICE"}</div><div>No: <b>{i.number}</b></div><div>Date: {fdate(i.date)}</div>{i.due_date && <div>Due: {fdate(i.due_date)}</div>}{i.branch_snapshot?.name && <div>Branch: {i.branch_snapshot.name}</div>}{i.place_of_supply && <div>Place of supply: {i.place_of_supply}</div>}<div className="mt-1"><Badge s={i.pay_status} /></div></div>
         </div>
         <div className="mt-4 text-sm"><div className="text-xs text-gray-500">Bill to</div><div className="font-semibold">{s.name || i.customer_name}</div><div>{[s.address, s.city, s.state, s.pin].filter(Boolean).join(", ")}</div><div>{s.mobile || i.mobile}{s.gstin ? ` · GSTIN ${s.gstin}` : ""}</div></div>

@@ -1,5 +1,5 @@
 import { q } from "@/lib/db";
-import { route, body, num, log } from "@/lib/api";
+import { route, body, num, log, HttpError } from "@/lib/api";
 import { publicSettings } from "@/lib/data";
 
 export const GET = route(["admin"], async () => publicSettings());
@@ -12,6 +12,11 @@ export const PUT = route(["admin"], async (req, { s }) => {
   const add = (k: string, v: any) => { a.push(v); sets.push(`${k}=$${a.length}`); };
   for (const k of TEXT) if (k in b) add(k, String(b[k] ?? "").trim() || null);
   for (const k of SECRET) if (typeof b[k] === "string" && b[k].trim()) add(k, b[k].trim());
+  if ("logo" in b) {
+    if (!b.logo) add("logo", null);
+    else if (typeof b.logo === "string" && b.logo.length <= 800000 && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(b.logo)) add("logo", b.logo);
+    else throw new HttpError(400, "Logo must be a PNG or JPG image under 600 KB");
+  }
   if ("gst_enabled" in b) add("gst_enabled", !!b.gst_enabled);
   if (["CGST_SGST", "IGST"].includes(b.gst_type)) add("gst_type", b.gst_type);
   for (const k of ["cgst", "sgst", "igst"]) if (k in b) add(k, Math.min(100, Math.max(0, num(b[k]))));

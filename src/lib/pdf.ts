@@ -8,11 +8,13 @@ const BLUE = rgb(0.15, 0.39, 0.92), GREY = rgb(0.94, 0.95, 0.96), LINE = rgb(0.8
 type Col = { h: string; w: number; a?: "r" };
 
 class Doc {
-  pdf!: PDFDocument; f: any; b: any; page: any; y = 0; W = 595.28; H = 841.89; M = 40; co: any; title = "";
+  pdf!: PDFDocument; f: any; b: any; logo: any; page: any; y = 0; W = 595.28; H = 841.89; M = 40; co: any; title = "";
   static async make(co: any, title: string, no?: string, date?: string) {
     const d = new Doc(); d.pdf = await PDFDocument.create();
     d.f = await d.pdf.embedFont(StandardFonts.Helvetica); d.b = await d.pdf.embedFont(StandardFonts.HelveticaBold);
-    d.co = co; d.title = title; d.newPage(); d.head(no, date); return d;
+    d.co = co; d.title = title;
+    if (co.logo) { try { const m = /^data:image\/(png|jpeg);base64,(.+)$/.exec(co.logo); if (m) d.logo = m[1] === "png" ? await d.pdf.embedPng(Buffer.from(m[2], "base64")) : await d.pdf.embedJpg(Buffer.from(m[2], "base64")); } catch { d.logo = null; } }
+    d.newPage(); d.head(no, date); return d;
   }
   newPage() { this.page = this.pdf.addPage([this.W, this.H]); this.y = this.H - this.M; }
   t(text: any, x: number, y: number, o: { size?: number; b?: boolean; align?: "left" | "right" | "center"; w?: number; color?: any } = {}) {
@@ -23,9 +25,13 @@ class Doc {
   fit(s: any, w: number, size = 8) { let t = clean(s); while (t.length > 1 && this.f.widthOfTextAtSize(t, size) > w) t = t.slice(0, -1); return t; }
   head(no?: string, date?: string) {
     this.page.drawRectangle({ x: 0, y: this.H - 70, width: this.W, height: 70, color: BLUE });
-    this.t(this.co.name, this.M, this.H - 36, { size: 20, b: true, color: WHITE });
+    let tx = this.M;
+    if (this.logo) { const sc = Math.min(50 / this.logo.height, 120 / this.logo.width), w = this.logo.width * sc, h = this.logo.height * sc;
+      this.page.drawRectangle({ x: this.M - 4, y: this.H - 35 - h / 2 - 4 - 8, width: w + 8, height: h + 8, color: WHITE });
+      this.page.drawImage(this.logo, { x: this.M, y: this.H - 35 - h / 2 - 8, width: w, height: h }); tx = this.M + w + 16; }
+    this.t(this.co.name, tx, this.H - 36, { size: 20, b: true, color: WHITE });
     const sub = [this.co.address, this.co.mobile && "Mob: " + this.co.mobile, this.co.gstin && "GSTIN: " + this.co.gstin].filter(Boolean).join("  |  ");
-    this.t(this.fit(sub, this.W - 2 * this.M), this.M, this.H - 56, { size: 8, color: WHITE });
+    this.t(this.fit(sub, this.W - tx - this.M), tx, this.H - 56, { size: 8, color: WHITE });
     this.y = this.H - 95;
     this.t(this.title, this.M, this.y, { size: 15, b: true });
     if (no) this.t(`No: ${no}    Date: ${fdate(date)}`, this.M, this.y, { size: 9, align: "right", w: this.W - 2 * this.M });

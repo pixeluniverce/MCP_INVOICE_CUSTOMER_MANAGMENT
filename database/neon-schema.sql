@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS invoice_revisions(
   id SERIAL PRIMARY KEY, invoice_id INTEGER NOT NULL REFERENCES invoices(id), edited_by INTEGER REFERENCES users(id), reason TEXT, snapshot JSONB,
   before_total NUMERIC(14,2), after_total NUMERIC(14,2), edited_at TIMESTAMPTZ NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS idx_rev_inv ON invoice_revisions(invoice_id);
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS logo TEXT;
 
 -- First admin login: username admin / temporary password Admin@12345 (must be changed at first login)
 INSERT INTO users(username, password_hash, role, must_change)

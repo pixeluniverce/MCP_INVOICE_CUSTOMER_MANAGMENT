@@ -14,6 +14,7 @@ export default function Settings() {
     <div className="space-y-4 max-w-4xl">
       <div className="flex justify-between items-center"><h1 className="text-xl font-bold">Settings</h1><button className="btn-primary" disabled={busy} onClick={save}>Save all settings</button></div>
       {msg && <div className="rounded-lg bg-blue-50 text-blue-800 text-sm p-3">{msg}</div>}
+      <LogoCard f={f} setF={setF} />
       <BranchesCard />
       <Card title="Company details"><div className="grid sm:grid-cols-2 gap-3">{I("name", "Company name")}{I("mobile", "Mobile")}{I("address", "Address")}{I("email", "Email")}{I("gstin", "GSTIN")}{I("state", "State")}{I("state_code", "State code")}</div></Card>
       <Card title="Invoice settings"><div className="grid sm:grid-cols-3 gap-3">{I("invoice_prefix", "Invoice prefix")}{I("next_invoice", "Next invoice number", "number")}{I("payment_terms", "Payment terms")}</div><p className="text-xs text-gray-500 mt-2">Invoice numbers are generated automatically and safely (no duplicates).</p></Card>
@@ -44,6 +45,37 @@ function BranchesCard() {
         <div><label className="label">Mobile</label><input className="input" value={f.mobile ?? ""} onChange={set("mobile")} /></div><div><label className="label">GSTIN (if different)</label><input className="input" value={f.gstin ?? ""} onChange={set("gstin")} /></div></div>
         {f.id && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active} onChange={set("active")} /> Active</label>}
         {msg && <div className="text-sm text-red-600">{msg}</div>}<div className="flex gap-2"><button className="btn-primary" onClick={save}>Save branch</button><button className="btn" onClick={() => setF(null)}>Cancel</button></div></div>}
+    </Card>
+  );
+}
+
+function LogoCard({ f, setF }: { f: any; setF: (v: any) => void }) {
+  const [msg, setMsg] = useState("");
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return; setMsg("");
+    if (!/^image\/(png|jpeg)$/.test(file.type)) return setMsg("Please choose a PNG or JPG image");
+    const rd = new FileReader();
+    rd.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const sc = Math.min(1, 400 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+        let out = c.toDataURL("image/png"); if (out.length > 700000) out = c.toDataURL("image/jpeg", 0.85);
+        if (out.length > 780000) return setMsg("Image is too large. Use a smaller logo.");
+        setF({ ...f, logo: out }); setMsg("Logo selected. Click “Save all settings” to apply it.");
+      };
+      img.src = String(rd.result);
+    };
+    rd.readAsDataURL(file);
+  }
+  return (
+    <Card title="Company logo">
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="h-20 w-40 border rounded-xl flex items-center justify-center bg-gray-50 overflow-hidden">{f.logo ? <img src={f.logo} alt="Logo" className="max-h-full max-w-full object-contain" /> : <span className="text-xs text-gray-400">No logo</span>}</div>
+        <div className="space-y-2"><input type="file" accept="image/png,image/jpeg" onChange={onFile} className="text-sm" />{f.logo && <div><button className="btn-danger btn-sm" onClick={() => setF({ ...f, logo: "" })}>Remove logo</button></div>}</div>
+      </div>
+      <p className="text-xs text-gray-500 mt-2">PNG or JPG. Shown in the menu, login page, invoice page and on every PDF (invoice, receipt, statement, challan). A transparent PNG works best.</p>
+      {msg && <div className="text-sm text-blue-700 mt-2">{msg}</div>}
     </Card>
   );
 }
