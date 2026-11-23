@@ -93,6 +93,13 @@ ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS signature TEXT;
 ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS signature_label TEXT;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_logo BOOLEAN;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_signature BOOLEAN;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_name TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_account_name TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_account_no TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_ifsc TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_branch TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_upi TEXT;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_bank BOOLEAN;
 
 -- First admin login: username admin / temporary password Admin@12345 (must be changed at first login)
 INSERT INTO users(username, password_hash, role, must_change)

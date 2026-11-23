@@ -6,7 +6,7 @@ import { calcInvoice } from "@/lib/calc";
 export const GET = route(["admin", "customer"], async (_r, { s, params }) => {
   const d = await getInvoice(Number(params.id), s.role === "customer" ? s.customerId : null);
   const ps = (await publicSettings()) as any;
-  return { ...d, company: { name: ps.name, address: ps.address, mobile: ps.mobile, email: ps.email, gstin: ps.gstin, state: ps.state, state_code: ps.state_code, payment_terms: ps.payment_terms, inv_color: ps.inv_color, inv_show_signature: ps.inv_show_signature, has_signature: !!ps.signature, signature_label: ps.signature_label } };
+  return { ...d, company: { name: ps.name, address: ps.address, mobile: ps.mobile, email: ps.email, gstin: ps.gstin, state: ps.state, state_code: ps.state_code, payment_terms: ps.payment_terms, inv_color: ps.inv_color, inv_show_signature: ps.inv_show_signature, has_signature: !!ps.signature, signature_label: ps.signature_label, bank_name: ps.bank_name, bank_account_name: ps.bank_account_name, bank_account_no: ps.bank_account_no, bank_ifsc: ps.bank_ifsc, bank_branch: ps.bank_branch, bank_upi: ps.bank_upi } };
 });
 
 // Edit a saved invoice. The previous version is stored in invoice_revisions (audit history).
@@ -29,12 +29,19 @@ export const PUT = route(["admin"], async (req, { s, params }) => {
       if (same && calc.gst_type === "IGST") throw new HttpError(409, `Place of supply (${b.place_of_supply}) is the same state as the company (${co.state}). Intra-state sales normally use CGST + SGST. Continue with IGST anyway?`, "TAX_TYPE");
       if (!same && calc.gst_type === "CGST_SGST") throw new HttpError(409, `Place of supply (${b.place_of_supply}) differs from company state (${co.state}). Inter-state sales normally use IGST. Continue with CGST + SGST anyway?`, "TAX_TYPE");
     }
+    const want = String(b.invoice_number || "").trim();
+    let newNumber = cur.number;
+    if (want && want !== cur.number) {
+      if (!/^[A-Za-z0-9\-\/_. ]{1,40}$/.test(want)) throw new HttpError(400, "Invoice number can use letters, numbers, - / _ . and spaces (max 40 characters)");
+      if ((await c.query("SELECT 1 FROM invoices WHERE lower(number)=lower($1) AND id<>$2", [want, id])).rowCount) throw new HttpError(409, `Invoice number ${want} is already used`);
+      newNumber = want;
+    }
     const old = (await c.query("SELECT * FROM invoice_items WHERE invoice_id=$1 ORDER BY id", [id])).rows;
     await c.query("INSERT INTO invoice_revisions(invoice_id,edited_by,reason,snapshot,before_total,after_total) VALUES($1,$2,$3,$4,$5,$6)", [id, s.uid, b.reason.trim(), JSON.stringify({ invoice: cur, items: old }), cur.grand_total, calc.grand_total]);
     await c.query(`UPDATE invoices SET date=$1,due_date=$2,place_of_supply=$3,gst_enabled=$4,gst_type=$5,subtotal=$6,discount_total=$7,taxable_total=$8,cgst_total=$9,sgst_total=$10,igst_total=$11,
-      other_charges=$12,other_label=$13,grand_total=$14,notes=$15,branch_id=$16,branch_snapshot=$17,gross_total=$18,less_amount=$19,less_label=$20,show_logo=$21,show_signature=$22 WHERE id=$23`,
+      other_charges=$12,other_label=$13,grand_total=$14,notes=$15,branch_id=$16,branch_snapshot=$17,gross_total=$18,less_amount=$19,less_label=$20,show_logo=$21,show_signature=$22,show_bank=$23,number=$24 WHERE id=$25`,
       [b.date, b.due_date || null, b.place_of_supply || null, !!b.gst_enabled, calc.gst_type, calc.subtotal, calc.discount_total, calc.taxable_total, calc.cgst_total, calc.sgst_total, calc.igst_total,
-       calc.other_charges, b.other_label || null, calc.grand_total, b.notes || null, br.id, JSON.stringify({ name: br.name, address: br.address, mobile: br.mobile, gstin: br.gstin }), calc.gross_total, calc.less_amount, b.less_label || null, b.show_logo ?? null, b.show_signature ?? null, id]);
+       calc.other_charges, b.other_label || null, calc.grand_total, b.notes || null, br.id, JSON.stringify({ name: br.name, address: br.address, mobile: br.mobile, gstin: br.gstin }), calc.gross_total, calc.less_amount, b.less_label || null, b.show_logo ?? null, b.show_signature ?? null, b.show_bank ?? null, newNumber, id]);
     await c.query("DELETE FROM invoice_items WHERE invoice_id=$1", [id]);
     for (const it of calc.items)
       await c.query(`INSERT INTO invoice_items(invoice_id,name,description,hsn,qty,unit,rate,discount,amount,taxable,cgst_rate,sgst_rate,igst_rate,cgst_amt,sgst_amt,igst_amt) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,

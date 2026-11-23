@@ -1,7 +1,7 @@
 -- ==========================================================
 -- UPDATE ONLY (for a database that already has the first schema).
--- Adds: Branches, customer prices, invoice Less amount, edit history, logo,
--- signature, app theme colours and invoice colours.
+-- Adds: Branches, customer prices, invoice Less amount, edit history, logo, signature,
+-- theme + invoice colours, bank details and per-invoice bank option.
 -- Neon Console -> SQL Editor -> paste -> Run. Safe to run more than once.
 -- ==========================================================
 
@@ -34,3 +34,10 @@ ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS signature TEXT;
 ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS signature_label TEXT;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_logo BOOLEAN;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_signature BOOLEAN;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_name TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_account_name TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_account_no TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_ifsc TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_branch TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_upi TEXT;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_bank BOOLEAN;

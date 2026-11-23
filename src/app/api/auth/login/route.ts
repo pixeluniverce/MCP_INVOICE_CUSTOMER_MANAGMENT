@@ -14,9 +14,10 @@ export async function POST(req: Request) {
     if (fails >= 5) return json({ error: "Too many failed attempts. Try again in 15 minutes." }, 429);
     const u = (await q(`SELECT u.*, c.active cust_active FROM users u LEFT JOIN customers c ON c.id=u.customer_id
       WHERE lower(u.username)=$1 OR c.mobile=$1 ORDER BY (lower(u.username)=$1) DESC LIMIT 1`, [id]))[0];
+    if (u && u.username !== id) { const f2 = (await q("SELECT COUNT(*)::int n FROM login_attempts WHERE username=$1 AND created_at>now()-interval '15 minutes'", [u.username]))[0].n; if (f2 >= 5) return json({ error: "Too many failed attempts. Try again in 15 minutes." }, 429); }
     const ok = u && u.active && (u.role === "ADMIN" || u.cust_active) && (await bcrypt.compare(pw, u.password_hash));
-    if (!ok) { await q("INSERT INTO login_attempts(username,ip) VALUES($1,$2)", [id, ip]); return json({ error: "Invalid username or password" }, 401); }
-    await q("DELETE FROM login_attempts WHERE username=$1", [id]);
+    if (!ok) { await q("INSERT INTO login_attempts(username,ip) VALUES($1,$2)", [id, ip]); if (u && u.username !== id) await q("INSERT INTO login_attempts(username,ip) VALUES($1,$2)", [u.username, ip]); return json({ error: "Invalid username or password" }, 401); }
+    await q("DELETE FROM login_attempts WHERE username=$1 OR username=$2", [id, u.username]);
     await q("UPDATE users SET last_login=now() WHERE id=$1", [u.id]);
     await createSession(u.id, u.must_change);
     return json({ role: u.role === "ADMIN" ? "admin" : "customer", mustChange: u.must_change });

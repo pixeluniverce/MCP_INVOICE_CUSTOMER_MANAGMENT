@@ -8,11 +8,11 @@ import { CustomerForm, CustomerPrices, InvoiceList, PaymentList } from "@/compon
 export default function CustomerPage() {
   const { id } = useParams() as { id: string };
   const { data: c, err, loading, reload } = useApi<any>(`/api/customers/${id}`);
-  const [edit, setEdit] = useState(false), [pw, setPw] = useState(""), [user, setUser] = useState(""), [msg, setMsg] = useState("");
+  const [edit, setEdit] = useState(false), [pw, setPw] = useState(""), [user, setUser] = useState(""), [msg, setMsg] = useState(""), [force, setForce] = useState(false);
   if (!c) return <State loading={loading} err={err} />;
   async function login(action: string) {
     setMsg("");
-    try { await api(`/api/customers/${id}/login`, "POST", { action, password: pw, username: user }); setPw(""); setMsg("Done"); reload(); } catch (e: any) { setMsg(e.message); }
+    try { await api(`/api/customers/${id}/login`, "POST", { action, password: pw, username: user, force_change: force }); setPw(""); setMsg("Done"); reload(); } catch (e: any) { setMsg(e.message); }
   }
   return (
     <div className="space-y-4">
@@ -36,11 +36,12 @@ export default function CustomerPage() {
         <Card title="Customer portal login">
           {c.login_id ? <div className="space-y-3 text-sm">
             <div>Username: <b>{c.username}</b> · {c.login_active ? <Badge s="ACTIVE" /> : <Badge s="REVERSED" />} · Last login: {fdt(c.last_login)}</div>
-            <div className="flex flex-wrap gap-2 items-end"><div><label className="label">New temporary password</label><input className="input" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" /></div><button className="btn" onClick={() => login("reset")}>Reset password</button>
+            <div className="flex flex-wrap gap-2 items-end"><div><label className="label">New password or PIN</label><input className="input" value={pw} onChange={e => setPw(e.target.value)} placeholder="min 4 (PIN allowed)" /></div><button className="btn" onClick={() => login("reset")}>Reset password</button>
               {c.login_active ? <button className="btn-danger" onClick={() => login("disable")}>Disable login</button> : <button className="btn-green" onClick={() => login("enable")}>Reactivate login</button>}</div>
           </div> : <div className="space-y-3 text-sm"><div className="text-gray-500">No login yet. Customer can sign in with username or mobile number.</div>
-            <div className="grid sm:grid-cols-2 gap-2"><div><label className="label">Username (blank = mobile)</label><input className="input" value={user} onChange={e => setUser(e.target.value)} /></div><div><label className="label">Temporary password</label><input className="input" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" /></div></div>
+            <div className="grid sm:grid-cols-2 gap-2"><div><label className="label">Username (blank = mobile)</label><input className="input" value={user} onChange={e => setUser(e.target.value)} /></div><div><label className="label">Password or PIN</label><input className="input" value={pw} onChange={e => setPw(e.target.value)} placeholder="min 4 (PIN allowed)" /></div></div>
             <button className="btn-primary" onClick={() => login("create")}>Create Customer Login</button></div>}
+          <label className="flex items-center gap-2 text-sm mt-3"><input type="checkbox" checked={force} onChange={e => setForce(e.target.checked)} /> Ask customer to change it at first login</label>
           {msg && <div className="text-sm mt-2 text-primary">{msg}</div>}
         </Card>
       </div>

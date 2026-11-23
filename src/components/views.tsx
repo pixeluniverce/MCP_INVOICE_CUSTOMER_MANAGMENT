@@ -88,6 +88,7 @@ export function InvoiceDetail({ id, admin }: { id: string; admin?: boolean }) {
           {i.less_amount > 0 ? <div className="border-t pt-1 space-y-1"><Row l="Gross total" v={i.gross_total ?? i.grand_total + i.less_amount} /><Row l={`Less: ${i.less_label || "Discount"}`} v={-i.less_amount} /><Row l="Net payable" v={i.grand_total} b /></div> : <div className="border-t pt-1"><Row l="Grand total" v={i.grand_total} b /></div>}<Row l="Amount paid" v={i.paid} tone="green" /><Row l="Pending" v={i.pending} tone="red" b />
         </div>
         {i.notes && <p className="text-sm text-gray-600 mt-3">Notes: {i.notes}</p>}
+        {(i.show_bank ?? i.gst_enabled) && (co.bank_account_no || co.bank_upi) && <div className="mt-4 text-sm rounded-lg bg-gray-50 p-3"><div className="font-semibold mb-1">Bank details</div><div className="grid sm:grid-cols-2 gap-x-6">{([["Bank", co.bank_name], ["A/c name", co.bank_account_name], ["A/c no.", co.bank_account_no], ["IFSC", co.bank_ifsc], ["Branch", co.bank_branch], ["UPI", co.bank_upi]] as any[]).filter(x => x[1]).map(([l, v]) => <div key={l}><span className="text-gray-500">{l}: </span>{v}</div>)}</div></div>}
         {(i.show_signature ?? co.inv_show_signature) && co.has_signature && <div className="mt-4 text-right"><img src="/api/signature" alt="" className="h-12 inline-block object-contain" /><div className="text-xs text-gray-500">{co.signature_label || "Authorised Signatory"}</div></div>}
       </Card>
       <Card title="Payments against this invoice">
@@ -209,7 +210,7 @@ export function CustomerForm({ initial, onSaved, onCancel }: { initial?: any; on
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!f.whatsapp_optin} onChange={set("whatsapp_optin")} /> Customer has agreed to receive WhatsApp messages</label>
       {initial && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active !== false} onChange={set("active")} /> Customer active</label>}
       {!initial && <div className="rounded-lg bg-gray-50 p-3 space-y-2"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={!!f.create_login} onChange={set("create_login")} /> Create Customer Login</label>
-        {f.create_login && <div className="grid sm:grid-cols-2 gap-3">{I("username", "Username (blank = mobile number)")}{I("password", "Temporary password (8+ chars)")}</div>}</div>}
+        {f.create_login && <><div className="grid sm:grid-cols-2 gap-3">{I("username", "Username (blank = mobile number)")}{I("password", "Password or 4-digit PIN (min 4)")}</div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!f.force_change} onChange={set("force_change")} /> Ask customer to change it at first login</label></>}</div>}
       {err && <div className="text-sm text-red-600 bg-red-50 rounded-lg p-2">{err}</div>}
       <div className="flex gap-2"><button className="btn-primary" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save customer"}</button>{onCancel && <button className="btn" onClick={onCancel}>Cancel</button>}</div>
     </div>

@@ -12,12 +12,12 @@ export const POST = route(["admin"], async (req, { s }) => {
   const b = await body(req);
   need(String(b.name || "").trim(), "Customer name is required");
   const mobile = digits(b.mobile); if (mobile.length < 10) throw new HttpError(400, "Enter a valid mobile number");
-  if (b.create_login && String(b.password || "").length < 8) throw new HttpError(400, "Temporary password must be 8+ characters");
+  if (b.create_login && String(b.password || "").length < 4) throw new HttpError(400, "Password or PIN must be at least 4 characters");
   const id = await tx(async (c) => {
     const r = await c.query(`INSERT INTO customers(name,mobile,alt_mobile,address,city,state,pin,gstin,opening_balance,notes,whatsapp_optin) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
       [b.name.trim(), mobile, digits(b.alt_mobile) || null, b.address || null, b.city || null, b.state || null, b.pin || null, (b.gstin || "").toUpperCase() || null, num(b.opening_balance), b.notes || null, b.whatsapp_optin !== false]);
     const cid = r.rows[0].id;
-    if (b.create_login) await c.query("INSERT INTO users(username,password_hash,role,customer_id,must_change) VALUES($1,$2,'CUSTOMER',$3,true)", [String(b.username || mobile).trim().toLowerCase(), await bcrypt.hash(b.password, 11), cid]);
+    if (b.create_login) await c.query("INSERT INTO users(username,password_hash,role,customer_id,must_change) VALUES($1,$2,'CUSTOMER',$3,$4)", [String(b.username || mobile).trim().toLowerCase(), await bcrypt.hash(b.password, 11), cid, !!b.force_change]);
     return cid;
   });
   await log(s.uid, "CUSTOMER_CREATED", String(id));

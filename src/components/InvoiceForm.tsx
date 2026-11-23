@@ -42,7 +42,8 @@ export default function InvoiceForm({ id }: { id?: string }) {
   const [f, setF] = useState<any>({ date: today(), due_date: "", place_of_supply: "", gst_enabled: false, gst_type: "CGST_SGST", cgst: 9, sgst: 9, igst: 18, other_charges: 0, other_label: "", less_amount: "", less_label: "", notes: "" });
   const [items, setItems] = useState<any[]>([{ ...blankItem }]);
   const [pay, setPay] = useState<any>({ amount: "", date: today(), mode: "Cash", reference: "" });
-  const [err, setErr] = useState(""), [busy, setBusy] = useState(false), loaded = useRef(false), [showLogo, setShowLogo] = useState(true), [showSig, setShowSig] = useState(false);
+  const [err, setErr] = useState(""), [busy, setBusy] = useState(false), loaded = useRef(false), [showLogo, setShowLogo] = useState(true), [showSig, setShowSig] = useState(false), [showBank, setShowBank] = useState(false), [invoiceNo, setInvoiceNo] = useState(""), bankTouched = useRef(false);
+  useEffect(() => { if (!editing && !bankTouched.current) setShowBank(!!f.gst_enabled); }, [f.gst_enabled]);
 
   // defaults for a NEW invoice
   useEffect(() => { if (st && !id) { setShowLogo(st.inv_show_logo !== false); setShowSig(!!st.inv_show_signature); } if (st && !id) setF((x: any) => ({ ...x, gst_enabled: !!st.gst_enabled, gst_type: st.gst_type || "CGST_SGST", cgst: st.cgst ?? 9, sgst: st.sgst ?? 9, igst: st.igst ?? 18 })); }, [st]);
@@ -54,7 +55,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
     const inv = ex.invoice, its = ex.items, base = its[0] || {}, cg = inv.gst_enabled && inv.gst_type === "CGST_SGST", ig = inv.gst_enabled && inv.gst_type === "IGST";
     setCust({ id: inv.customer_id, name: inv.customer_name, mobile: inv.mobile });
     if (inv.branch_id) setBranchId(String(inv.branch_id));
-    setShowLogo(inv.show_logo ?? st.inv_show_logo !== false); setShowSig(inv.show_signature ?? !!st.inv_show_signature);
+    setShowLogo(inv.show_logo ?? st.inv_show_logo !== false); setShowSig(inv.show_signature ?? !!st.inv_show_signature); setShowBank(inv.show_bank ?? inv.gst_enabled); setInvoiceNo(inv.number); bankTouched.current = true;
     setF({ date: inv.date, due_date: inv.due_date || "", place_of_supply: inv.place_of_supply || "", gst_enabled: inv.gst_enabled, gst_type: inv.gst_enabled ? inv.gst_type : st.gst_type || "CGST_SGST",
       cgst: cg ? base.cgst_rate : st.cgst ?? 9, sgst: cg ? base.sgst_rate : st.sgst ?? 9, igst: ig ? base.igst_rate : st.igst ?? 18, other_charges: inv.other_charges || 0, other_label: inv.other_label || "",
       less_amount: inv.less_amount || "", less_label: inv.less_label || "", notes: inv.notes || "" });
@@ -79,7 +80,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
   async function submit(override = false) {
     if (!cust) return setErr("Select a customer"); setBusy(true); setErr("");
     try {
-      const payload = { ...f, customer_id: cust.id, items, override_tax_type: override, branch_id: branchId, save_prices: savePrices, show_logo: showLogo, show_signature: showSig };
+      const payload = { ...f, customer_id: cust.id, items, override_tax_type: override, branch_id: branchId, save_prices: savePrices, show_logo: showLogo, show_signature: showSig, show_bank: showBank, invoice_number: invoiceNo };
       const j = editing ? await api(`/api/invoices/${id}`, "PUT", { ...payload, reason }) : await api("/api/invoices", "POST", { ...payload, payment: paidNow > 0 ? pay : null });
       localStorage.setItem("branchId", branchId);
       router.push(`/admin/invoices/${editing ? id : j.id}`);
@@ -100,7 +101,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
           <div><label className="label">Branch</label><select className="input" value={branchId} onChange={e => setBranchId(e.target.value)}>{(brs?.rows || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
         </div>
       </Card>
-      <Card title="Invoice details"><div className="grid sm:grid-cols-3 gap-3">{F("date", "Invoice date", "date")}{F("due_date", "Due date", "date")}{F("place_of_supply", "Place of supply (state)")}</div></Card>
+      <Card title="Invoice details"><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"><div><label className="label">Invoice number {editing ? "" : "(blank = automatic)"}</label><input className="input" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} placeholder="e.g. GST/2026/001" /></div>{F("date", "Invoice date", "date")}{F("due_date", "Due date", "date")}{F("place_of_supply", "Place of supply (state)")}</div></Card>
       <Card title="Products">
         <div className="space-y-3">{items.map((it, n) => (
           <div key={n} className="border rounded-xl p-3 space-y-2 bg-gray-50">
@@ -125,6 +126,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
       <Card title="Print options for this invoice">
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showLogo} onChange={e => setShowLogo(e.target.checked)} /> Show my logo on this invoice {!st.logo && <span className="text-xs text-gray-400">(upload a logo in Settings first)</span>}</label>
         <label className="flex items-center gap-2 text-sm mt-2"><input type="checkbox" checked={showSig} onChange={e => setShowSig(e.target.checked)} /> Show my signature on this invoice {!st.signature && <span className="text-xs text-gray-400">(upload a signature in Settings first)</span>}</label>
+        <label className="flex items-center gap-2 text-sm mt-2"><input type="checkbox" checked={showBank} onChange={e => { setShowBank(e.target.checked); bankTouched.current = true; }} /> Show bank details on this invoice {!st.bank_account_no && !st.bank_upi && <span className="text-xs text-gray-400">(add bank details in Settings first)</span>}</label>
       </Card>
       <Card title="GST">
         <label className="flex items-center gap-2 font-medium"><input type="checkbox" checked={f.gst_enabled} onChange={e => setF({ ...f, gst_enabled: e.target.checked })} /> Enable GST</label>

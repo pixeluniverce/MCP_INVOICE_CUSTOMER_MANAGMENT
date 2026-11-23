@@ -101,6 +101,10 @@ export async function invoicePdf(co: any, inv: any, items: any[], payments: any[
   tl.push(["Amount Paid", rs(inv.paid)], ["Balance Due", rs(inv.pending), true]);
   d.totals(tl);
   if (payments.length) { d.ensure(40); d.t("Payments received", d.M, d.y, { b: true }); d.y -= 14; d.table([{ h: "Receipt", w: 130 }, { h: "Date", w: 100 }, { h: "Mode", w: 100 }, { h: "Reference", w: 100 }, { h: "Amount", w: 85, a: "r" }], payments.map(p => [p.receipt_no, fdate(p.date), p.mode, p.reference || "-", p.amount.toFixed(2)])); }
+  if ((inv.show_bank ?? gst) && (co.bank_account_no || co.bank_upi)) {
+    const bl = [co.bank_name && `Bank: ${co.bank_name}`, co.bank_account_name && `A/c Name: ${co.bank_account_name}`, co.bank_account_no && `A/c No: ${co.bank_account_no}`, co.bank_ifsc && `IFSC: ${co.bank_ifsc}`, co.bank_branch && `Branch: ${co.bank_branch}`, co.bank_upi && `UPI: ${co.bank_upi}`].filter(Boolean) as string[];
+    d.ensure(bl.length * 11 + 28); d.t("Bank Details", d.M, d.y, { b: true }); d.y -= 13; d.lines(bl, d.M, 8.5); d.y -= 4;
+  }
   if (inv.notes) { d.ensure(30); d.t("Notes: " + inv.notes, d.M, d.y, { size: 8 }); d.y -= 12; }
   if (co.payment_terms) { d.ensure(30); d.t("Terms: " + co.payment_terms, d.M, d.y, { size: 8 }); d.y -= 12; }
   d.sign("Customer Signature"); return d.save();

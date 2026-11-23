@@ -18,6 +18,7 @@ export default function Settings() {
       <BrandingCard f={f} setF={setF} />
       <ThemeCard f={f} setF={setF} />
       <InvoiceLookCard f={f} setF={setF} />
+      <BankCard f={f} setF={setF} />
       <BranchesCard />
       <Card title="Company details"><div className="grid sm:grid-cols-2 gap-3">{I("name", "Company name")}{I("mobile", "Mobile")}{I("address", "Address")}{I("email", "Email")}{I("gstin", "GSTIN")}{I("state", "State")}{I("state_code", "State code")}</div></Card>
       <Card title="Invoice settings"><div className="grid sm:grid-cols-3 gap-3">{I("invoice_prefix", "Invoice prefix")}{I("next_invoice", "Next invoice number", "number")}{I("payment_terms", "Payment terms")}</div><p className="text-xs text-gray-500 mt-2">Invoice numbers are generated automatically and safely (no duplicates).</p></Card>
@@ -120,6 +121,16 @@ function InvoiceLookCard({ f, setF }: { f: any; setF: (v: any) => void }) {
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!f.inv_show_signature} onChange={e => setF({ ...f, inv_show_signature: e.target.checked })} /> Show signature on invoices &amp; PDFs by default</label>
       </div>
       <p className="text-xs text-gray-500 mt-2">The colour is used for the header bar and table headings on invoice, receipt, statement and challan PDFs. You can override logo/signature on each invoice.</p>
+    </Card>
+  );
+}
+
+function BankCard({ f, setF }: { f: any; setF: (v: any) => void }) {
+  const I = (k: string, l: string, ph = "") => <div><label className="label">{l}</label><input className="input" value={f[k] ?? ""} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} /></div>;
+  return (
+    <Card title="Bank details (printed on invoices)">
+      <div className="grid sm:grid-cols-3 gap-3">{I("bank_name", "Bank name")}{I("bank_account_name", "Account holder name")}{I("bank_account_no", "Account number")}{I("bank_ifsc", "IFSC code")}{I("bank_branch", "Bank branch")}{I("bank_upi", "UPI ID (optional)", "name@bank")}</div>
+      <p className="text-xs text-gray-500 mt-2">GST invoices show these details by default. For invoices without GST, tick “Show bank details on this invoice” when you create it. You can switch it on or off for any invoice.</p>
     </Card>
   );
 }

@@ -10,13 +10,13 @@ export const POST = route(["admin"], async (req, { s, params }) => {
   const pw = String(b.password || "");
   if (b.action === "create") {
     if (u) throw new HttpError(409, "This customer already has a login");
-    if (pw.length < 8) throw new HttpError(400, "Temporary password must be 8+ characters");
-    await q("INSERT INTO users(username,password_hash,role,customer_id,must_change) VALUES($1,$2,'CUSTOMER',$3,true)", [String(b.username || c.mobile).trim().toLowerCase(), await bcrypt.hash(pw, 11), cid]);
+    if (pw.length < 4) throw new HttpError(400, "Password or PIN must be at least 4 characters");
+    await q("INSERT INTO users(username,password_hash,role,customer_id,must_change) VALUES($1,$2,'CUSTOMER',$3,$4)", [String(b.username || c.mobile).trim().toLowerCase(), await bcrypt.hash(pw, 11), cid, !!b.force_change]);
   } else {
     if (!u) throw new HttpError(404, "No login exists for this customer");
     if (b.action === "reset") {
-      if (pw.length < 8) throw new HttpError(400, "Temporary password must be 8+ characters");
-      await q("UPDATE users SET password_hash=$1, must_change=true WHERE id=$2", [await bcrypt.hash(pw, 11), u.id]);
+      if (pw.length < 4) throw new HttpError(400, "Password or PIN must be at least 4 characters");
+      await q("UPDATE users SET password_hash=$1, must_change=$3 WHERE id=$2", [await bcrypt.hash(pw, 11), u.id, !!b.force_change]);
     } else if (b.action === "disable" || b.action === "enable") await q("UPDATE users SET active=$1 WHERE id=$2", [b.action === "enable", u.id]);
     else throw new HttpError(400, "Unknown action");
   }

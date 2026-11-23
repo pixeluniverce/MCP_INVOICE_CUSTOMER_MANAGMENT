@@ -15,7 +15,7 @@ export default function ChangePassword() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={submit} className="card w-full max-w-sm space-y-4 p-6">
         <h1 className="text-xl font-bold">Set a new password</h1>
-        <p className="text-sm text-gray-500">Use at least 8 characters with letters and numbers.</p>
+        <p className="text-sm text-gray-500">Customers: at least 4 characters (a PIN is fine). Admin: at least 8 characters with letters and numbers.</p>
         <div><label className="label">Current / temporary password</label><input className="input" type="password" value={cur} onChange={e => setCur(e.target.value)} /></div>
         <div><label className="label">New password</label><input className="input" type="password" value={pw} onChange={e => setPw(e.target.value)} /></div>
         <div><label className="label">Confirm new password</label><input className="input" type="password" value={pw2} onChange={e => setPw2(e.target.value)} /></div>

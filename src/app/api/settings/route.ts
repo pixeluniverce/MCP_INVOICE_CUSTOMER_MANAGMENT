@@ -4,7 +4,7 @@ import { publicSettings } from "@/lib/data";
 
 export const GET = route(["admin"], async () => publicSettings());
 
-const TEXT = ["name", "address", "mobile", "email", "gstin", "state", "state_code", "invoice_prefix", "payment_terms", "wa_phone", "wa_phone_id", "wa_waba_id", "wa_api_version", "wa_template_name", "wa_template_lang", "signature_label"];
+const TEXT = ["name", "address", "mobile", "email", "gstin", "state", "state_code", "invoice_prefix", "payment_terms", "wa_phone", "wa_phone_id", "wa_waba_id", "wa_api_version", "wa_template_name", "wa_template_lang", "signature_label", "bank_name", "bank_account_name", "bank_account_no", "bank_ifsc", "bank_branch", "bank_upi"];
 const SECRET = ["wa_token", "wa_verify_token", "wa_app_secret"]; // only overwritten when a new value is typed
 
 export const PUT = route(["admin"], async (req, { s }) => {
