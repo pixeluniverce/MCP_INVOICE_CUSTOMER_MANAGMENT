@@ -8,7 +8,7 @@ export default function Invoices() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center"><h1 className="text-xl font-bold">All Invoices</h1><Link className="btn-primary" href="/admin/invoices/new">+ New Invoice</Link></div>
-      <Card>{ready && <InvoiceList admin base="/admin/invoices" status0={p.get("status") || ""} />}</Card>
+      <Card>{ready && <InvoiceList admin base="/admin/invoices" status0={p.get("status") || ""} branch0={p.get("branch") || ""} />}</Card>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, useApi, State, Card } from "@/components/ui";
-import { DEFAULT_THEME, themeVars } from "@/lib/theme";
+import { DEFAULT_THEME, POPULAR, Theme, applyThemeToDom } from "@/lib/theme";
 export default function Settings() {
   const { data, err, loading, reload } = useApi<any>("/api/settings");
   const [f, setF] = useState<any>(null), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false), [origin, setOrigin] = useState("");
@@ -92,23 +92,17 @@ function BrandingCard({ f, setF }: { f: any; setF: (v: any) => void }) {
   );
 }
 
-const PRESETS: [string, string, string, string, string][] = [
-  ["Blue", "#2563eb", "#ffffff", "#374151", "#f9fafb"], ["Green", "#16a34a", "#ffffff", "#374151", "#f9fafb"], ["Orange", "#ea580c", "#ffffff", "#374151", "#fffaf5"],
-  ["Purple", "#7c3aed", "#ffffff", "#374151", "#faf8ff"], ["Red", "#dc2626", "#ffffff", "#374151", "#fffafa"], ["Teal", "#0d9488", "#ffffff", "#374151", "#f7fffd"],
-  ["Dark navy", "#2563eb", "#0f172a", "#e2e8f0", "#f1f5f9"], ["Dark green", "#16a34a", "#14532d", "#dcfce7", "#f0fdf4"], ["Charcoal & gold", "#d97706", "#1f2937", "#f3f4f6", "#f9fafb"],
-];
 function ThemeCard({ f, setF }: { f: any; setF: (v: any) => void }) {
-  const cur = { primary: f.theme_primary || DEFAULT_THEME.primary, sidebarBg: f.theme_sidebar_bg || DEFAULT_THEME.sidebarBg, sidebarText: f.theme_sidebar_text || DEFAULT_THEME.sidebarText, pageBg: f.theme_page_bg || DEFAULT_THEME.pageBg };
-  function apply(n: typeof cur) {
-    setF({ ...f, theme_primary: n.primary, theme_sidebar_bg: n.sidebarBg, theme_sidebar_text: n.sidebarText, theme_page_bg: n.pageBg });
-    Object.entries(themeVars(n)).forEach(([k, v]) => document.documentElement.style.setProperty(k, v)); // live preview
-  }
-  const C = (k: keyof typeof cur, label: string) => <div><label className="label">{label}</label><input type="color" className="h-10 w-full rounded-lg border cursor-pointer" value={cur[k]} onChange={e => apply({ ...cur, [k]: e.target.value })} /></div>;
+  const cur: Theme = { primary: f.theme_primary || DEFAULT_THEME.primary, sidebarBg: f.theme_sidebar_bg || DEFAULT_THEME.sidebarBg, sidebarText: f.theme_sidebar_text || DEFAULT_THEME.sidebarText, pageBg: f.theme_page_bg || DEFAULT_THEME.pageBg };
+  function apply(n: Theme) { setF({ ...f, theme_primary: n.primary, theme_sidebar_bg: n.sidebarBg, theme_sidebar_text: n.sidebarText, theme_page_bg: n.pageBg }); applyThemeToDom(n); }
+  const C = (k: keyof Theme, label: string) => <div><label className="label">{label}</label><input type="color" className="h-10 w-full rounded-lg border cursor-pointer" value={cur[k]} onChange={e => apply({ ...cur, [k]: e.target.value })} /></div>;
   return (
     <Card title="App colours (theme)">
-      <div className="flex flex-wrap gap-2 mb-4">{PRESETS.map(([n, p, sb, st, pb]) => <button key={n} className="btn btn-sm" onClick={() => apply({ primary: p, sidebarBg: sb, sidebarText: st, pageBg: pb })}><span className="inline-block w-4 h-4 rounded-full border" style={{ background: p }} /><span className="inline-block w-4 h-4 rounded border" style={{ background: sb }} />{n}</button>)}</div>
+      <div className="label">Popular themes</div>
+      <div className="flex flex-wrap gap-2 mb-4">{POPULAR.map(([n, t]) => <button key={n} className="btn btn-sm" onClick={() => apply(t)}><span className="inline-block w-4 h-4 rounded-full border" style={{ background: t.primary }} /><span className="inline-block w-4 h-4 rounded border" style={{ background: t.sidebarBg }} /><span className="inline-block w-4 h-4 rounded border" style={{ background: t.pageBg }} />{n}</button>)}</div>
+      <div className="label">Custom colours</div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{C("primary", "Buttons & highlights")}{C("sidebarBg", "Side menu background")}{C("sidebarText", "Side menu text")}{C("pageBg", "Page background")}</div>
-      <div className="flex items-center gap-3 mt-3"><button className="btn btn-sm" onClick={() => apply({ primary: DEFAULT_THEME.primary, sidebarBg: DEFAULT_THEME.sidebarBg, sidebarText: DEFAULT_THEME.sidebarText, pageBg: DEFAULT_THEME.pageBg })}>Reset to default</button><span className="text-xs text-gray-500">Changes preview instantly. Click “Save all settings” to keep them for everyone (admin and customers).</span></div>
+      <div className="flex items-center gap-3 mt-3"><button className="btn btn-sm" onClick={() => apply(DEFAULT_THEME)}>Reset to default</button><span className="text-xs text-gray-500">Changes preview instantly. Click “Save all settings” to keep them. A dark page background turns on dark mode. You can also use the 🎨 Theme button at the top of any admin page.</span></div>
     </Card>
   );
 }

@@ -3,6 +3,7 @@ import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { inr } from "@/lib/fmt";
+import ThemeSwitcher from "./ThemeSwitcher";
 export { inr, fdate, fdt, today } from "@/lib/fmt";
 
 export async function api(url: string, method = "GET", data?: any) {
@@ -77,7 +78,7 @@ export function WaBtn({ type, id, customerId, label = "WhatsApp", className = "b
   return <button className={className} disabled={busy} onClick={go}>{busy ? "Sending…" : <>💬 {label}</>}</button>;
 }
 
-export function Shell({ nav, brand, user, children }: { nav: { href: string; label: string; icon: string }[]; brand: string; user: string; children: ReactNode }) {
+export function Shell({ nav, brand, user, children, canTheme }: { nav: { href: string; label: string; icon: string }[]; brand: string; user: string; children: ReactNode; canTheme?: boolean }) {
   const path = usePathname(), [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
   const root = nav[0].href;
@@ -93,10 +94,11 @@ export function Shell({ nav, brand, user, children }: { nav: { href: string; lab
       </aside>
       {open && <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="lg:pl-60">
-        <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 h-14 flex items-center gap-3 px-4">
+        <header className="sticky top-0 z-10 backdrop-blur h-14 flex items-center gap-3 px-4" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--line)" }}>
           <button className="btn lg:hidden" aria-label="Menu" onClick={() => setOpen(true)}>☰</button>
           <div className="font-semibold lg:hidden truncate">{brand}</div>
           <div className="ml-auto text-sm text-gray-600 hidden sm:block">{user}</div>
+          {canTheme && <ThemeSwitcher />}
           <InstallButton />
           <button className="btn" onClick={logout}>Logout</button>
         </header>

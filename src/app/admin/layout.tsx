@@ -11,5 +11,5 @@ const NAV = [
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const s = await getSession();
   if (!s) redirect("/login"); if (s.mustChange) redirect("/change-password"); if (s.role !== "admin") redirect("/portal");
-  return <Shell nav={NAV} brand="Mahadev Cement Product" user={s.username}>{children}</Shell>;
+  return <Shell nav={NAV} brand="Mahadev Cement Product" user={s.username} canTheme>{children}</Shell>;
 }

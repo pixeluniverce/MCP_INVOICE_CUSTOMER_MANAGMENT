@@ -7,8 +7,8 @@ const MODES = ["Cash", "UPI", "Bank Transfer", "Cheque", "Other"];
 export { MODES };
 
 // ---------- Invoice list (admin + customer portal). mode: all | pending | paid ----------
-export function InvoiceList({ admin, cid, mode = "all", base, status0 }: { admin?: boolean; cid?: number; mode?: "all" | "pending" | "paid"; base: string; status0?: string }) {
-  const [branch, setBranch] = useState(""), [status, setStatus] = useState(mode === "pending" ? "PENDING" : mode === "paid" ? "PAID" : status0 || ""), [from, setFrom] = useState(""), [to, setTo] = useState(""), [search, setSearch] = useState(""), [page, setPage] = useState(1);
+export function InvoiceList({ admin, cid, mode = "all", base, status0, branch0 }: { admin?: boolean; cid?: number; mode?: "all" | "pending" | "paid"; base: string; status0?: string; branch0?: string }) {
+  const [branch, setBranch] = useState(branch0 || ""), [status, setStatus] = useState(mode === "pending" ? "PENDING" : mode === "paid" ? "PAID" : status0 || ""), [from, setFrom] = useState(""), [to, setTo] = useState(""), [search, setSearch] = useState(""), [page, setPage] = useState(1);
   const ds = useDebounce(search);
   const url = `/api/invoices?page=${page}&size=25&status=${status}&from=${from}&to=${to}${cid ? `&customer_id=${cid}` : ""}${admin ? `&search=${encodeURIComponent(ds)}` : ""}`;
   const { data: brs } = useApi<any>(admin ? "/api/branches" : null);

@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import PwaRegister from "@/components/PwaRegister";
 import { q } from "@/lib/db";
-import { themeVars } from "@/lib/theme";
+import { themeVars, themeMode } from "@/lib/theme";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Mahadev Cement Product", description: "Billing & customer account management",
@@ -16,5 +16,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   try { t = (await q("SELECT theme_primary,theme_sidebar_bg,theme_sidebar_text,theme_page_bg FROM company_settings WHERE id=1"))[0] || {}; } catch {}
   const vars = themeVars({ primary: t.theme_primary, sidebarBg: t.theme_sidebar_bg, sidebarText: t.theme_sidebar_text, pageBg: t.theme_page_bg });
   const css = ":root{" + Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(";") + "}";
-  return <html lang="en"><head><style dangerouslySetInnerHTML={{ __html: css }} /></head><body>{children}<PwaRegister /></body></html>;
+  const mode = themeMode({ pageBg: t.theme_page_bg });
+  return <html lang="en" data-mode={mode}><head><style dangerouslySetInnerHTML={{ __html: css }} /></head><body>{children}<PwaRegister /></body></html>;
 }
