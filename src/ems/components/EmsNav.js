@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const links = [['/admin/ems', 'Dashboard'], ['/admin/ems/employees', 'Employees'], ['/admin/ems/groups', 'Employee Groups'], ['/admin/ems/assign', 'Daily Groups & Attendance'], ['/admin/ems/items', 'Items & Rates'], ['/admin/ems/work', 'Daily Production'], ['/admin/ems/distribution', 'Earnings Distribution'], ['/admin/ems/advances', 'Advances'], ['/admin/ems/payments', 'Payments'], ['/admin/ems/reports', 'Reports & Settlement'], ['/admin/ems/settings', 'Settings'], ['/admin/ems/status', 'System status']];
+const links = [['/admin/ems', 'Dashboard'], ['/admin/ems/employees', 'Employees'], ['/admin/ems/groups', 'Employee Groups'], ['/admin/ems/assign', 'Daily Groups & Attendance'], ['/admin/ems/items', 'Items & Rates'], ['/admin/ems/work', 'Daily Production'], ['/admin/ems/distribution', 'Earnings Distribution'], ['/admin/ems/advances', 'Advances'], ['/admin/ems/payments', 'Payments'], ['/admin/ems/reports', 'Reports & Settlement'], ['/admin/ems/settings', 'Settings'], ['/admin/ems/status', 'System status'], ['/admin/ems/import', 'Import old data']];
 
 export default function EmsNav() {
   const path = usePathname();
