@@ -1,0 +1,2 @@
+export const Stat = ({ l, v }) => (<div className="card"><div className="text-xs text-gray-500">{l}</div><div className="mt-1 text-2xl font-semibold text-gray-900">{v}</div></div>);
+export const Head = ({ t, children }) => (<div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold text-gray-900">{t}</h1><div className="flex flex-wrap gap-2">{children}</div></div>);

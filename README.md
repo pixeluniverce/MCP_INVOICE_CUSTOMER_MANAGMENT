@@ -35,3 +35,9 @@ If the API fails, the app offers the fallback (open WhatsApp with prefilled text
 - Money: stored as NUMERIC(14,2); invoice totals are always recalculated on the server.
 - Outstanding = opening balance + invoices – payments. Bill status comes from payment allocations.
 - PDFs use standard fonts: Latin text only, ₹ is printed as "Rs.". Non-Latin names print as "?".
+
+## Employee Management System (admin only)
+Menu: **Employees (EMS)** (`/admin/ems`). Group-wise production and piece-rate earnings, advances, payments,
+period settlement and reports. It uses the same admin login, database and theme as the invoice system.
+Customers cannot see or reach it: every page and every database query in this section requires an admin session.
+Tables are created by `neon-update.sql` / `neon-schema.sql`. `npm run test:ems` runs the earnings-split tests.

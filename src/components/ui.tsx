@@ -85,7 +85,7 @@ export function Shell({ nav, brand, user, children, canTheme }: { nav: { href: s
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }
   return (
     <div className="min-h-screen">
-      <aside className={`fixed inset-y-0 left-0 z-30 w-60 flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`} style={{ background: "var(--sidebar-bg)", color: "var(--sidebar-text)", borderRight: "1px solid var(--sidebar-border)" }}>
+      <aside className={`fixed inset-y-0 left-0 z-30 w-60 print:hidden flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`} style={{ background: "var(--sidebar-bg)", color: "var(--sidebar-text)", borderRight: "1px solid var(--sidebar-border)" }}>
         <div className="h-14 flex items-center gap-2 px-4 font-bold" style={{ borderBottom: "1px solid var(--sidebar-border)" }}><img src="/api/logo" alt="" className="h-9 max-w-[56px] object-contain" onError={e => ((e.target as HTMLImageElement).style.display = "none")} /><span className="leading-tight text-sm">{brand}</span></div>
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {nav.map(n => { const active = n.href === root ? path === root : path.startsWith(n.href);
@@ -93,13 +93,14 @@ export function Shell({ nav, brand, user, children, canTheme }: { nav: { href: s
         </nav>
       </aside>
       {open && <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setOpen(false)} />}
-      <div className="lg:pl-60">
-        <header className="sticky top-0 z-10 backdrop-blur h-14 flex items-center gap-3 px-4" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--line)" }}>
+      <div className="lg:pl-60 print:pl-0">
+        <header className="sticky top-0 z-10 print:hidden backdrop-blur h-14 flex items-center gap-3 px-4" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--line)" }}>
           <button className="btn lg:hidden" aria-label="Menu" onClick={() => setOpen(true)}>☰</button>
           <div className="font-semibold lg:hidden truncate">{brand}</div>
           <div className="ml-auto text-sm text-gray-600 hidden sm:block">{user}</div>
           {canTheme && <ThemeSwitcher />}
           <InstallButton />
+          <Link href="/change-password" className="btn" title="Change password" aria-label="Change password">🔑</Link>
           <button className="btn" onClick={logout}>Logout</button>
         </header>
         <main className="p-4 md:p-6 max-w-7xl mx-auto">{children}</main>
