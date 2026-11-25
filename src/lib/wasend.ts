@@ -1,11 +1,11 @@
 import { q } from "./db";
 import { HttpError } from "./errors";
-import { getSettings, getInvoice, getPayment, getChallan, getLedger, customerSummary, listInvoices } from "./data";
-import { invoicePdf, receiptPdf, statementPdf, challanPdf } from "./pdf";
+import { getSettings, getInvoice, getPayment, getChallan, getLedger, customerSummary, listInvoices, getCatalog } from "./data";
+import { invoicePdf, receiptPdf, statementPdf, challanPdf, catalogPdf } from "./pdf";
 import { waSendDocument, normMobile } from "./wa";
 import { fdate, inr } from "./fmt";
 
-export type WaType = "invoice" | "receipt" | "reminder" | "statement" | "challan";
+export type WaType = "invoice" | "receipt" | "reminder" | "statement" | "challan" | "catalog";
 
 export async function sendWA(o: { type: WaType; id?: number; customer_id?: number; userId: number; force?: boolean }) {
   const co: any = await getSettings();
@@ -45,6 +45,11 @@ export async function sendWA(o: { type: WaType; id?: number; customer_id?: numbe
     pdf = await challanPdf(co, ch, items);
     text = `Hello ${ch.customer_name},\n\nYour delivery challan ${ch.number} dated ${fdate(ch.date)} from ${co.name} is attached.${sign}`;
     summary = `Delivery challan ${ch.number} dated ${fdate(ch.date)}.`;
+  } else if (o.type === "catalog") {
+    cid = Number(o.customer_id); const cu = (await q("SELECT name FROM customers WHERE id=$1", [cid]))[0]; if (!cu) throw new HttpError(404, "Customer not found");
+    pdf = await catalogPdf(co, await getCatalog({ cid }), "PRODUCT CATALOG", co.catalog_show_prices !== false);
+    filename = "Product-Catalog.pdf"; refLabel = "catalog"; pdfUrl = `/api/pdf/catalog/0?customer_id=${cid}`;
+    text = `Hello ${cu.name},\n\nPlease find our latest product catalog from ${co.name} attached.${sign}`; summary = "Product catalog and prices.";
   } else throw new HttpError(400, "Unknown message type");
 
   const cust = (await q("SELECT mobile, whatsapp_optin FROM customers WHERE id=$1", [cid]))[0];

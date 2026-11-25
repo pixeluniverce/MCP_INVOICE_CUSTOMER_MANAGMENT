@@ -73,7 +73,8 @@ export default function Dashboard() {
 
 // Month calendar: invoice count per day; click a date to see that day's invoices and net selling value.
 function CalendarCard({ branch }: { branch: string }) {
-  const [month, setMonth] = useState(today().slice(0, 7)), [sel, setSel] = useState(today());
+  const [tdy, setTdy] = useState(today()), [month, setMonth] = useState(today().slice(0, 7)), [sel, setSel] = useState(today());
+  useEffect(() => { const up = () => setTdy(today()); const t = setInterval(up, 30000); document.addEventListener("visibilitychange", up); return () => { clearInterval(t); document.removeEventListener("visibilitychange", up); }; }, []);
   const bq = branch ? `&branch=${branch}` : "";
   const { data: cal } = useApi<any>(`/api/dashboard/calendar?month=${month}${bq}`);
   const { data: day, loading: dl } = useApi<any>(sel ? `/api/dashboard/calendar?date=${sel}${bq}` : null);
@@ -83,13 +84,14 @@ function CalendarCard({ branch }: { branch: string }) {
   const shift = (n: number) => setMonth(new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7));
   const ds = (d: number) => `${month}-${String(d).padStart(2, "0")}`;
   return (
-    <Card title="Sales calendar" right={<div className="flex items-center gap-1"><button className="btn btn-sm" onClick={() => shift(-1)}>‹</button><span className="text-sm font-medium w-36 text-center">{MONTH_FULL[m - 1]} {y}</span><button className="btn btn-sm" onClick={() => shift(1)}>›</button><button className="btn btn-sm" onClick={() => { setMonth(today().slice(0, 7)); setSel(today()); }}>Today</button></div>}>
+    <Card title="Sales calendar" right={<div className="flex items-center gap-1"><button className="btn btn-sm" onClick={() => shift(-1)}>‹</button><span className="text-sm font-medium w-36 text-center">{MONTH_FULL[m - 1]} {y}</span><button className="btn btn-sm" onClick={() => shift(1)}>›</button><button className="btn btn-sm" onClick={() => { setMonth(tdy.slice(0, 7)); setSel(tdy); }}>Today</button></div>}>
       <div className="grid lg:grid-cols-5 gap-4">
         <div className="lg:col-span-3">
+          <div className="text-xs text-gray-500 mb-2">Today in India (IST): <b>{fdate(tdy)}</b></div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-gray-500 mb-1">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(w => <div key={w}>{w}</div>)}</div>
           <div className="grid grid-cols-7 gap-1">{cells.map((c, i) => {
             if (!c) return <div key={i} />;
-            const k = ds(c), x = map[k], isSel = sel === k, isToday = today() === k;
+            const k = ds(c), x = map[k], isSel = sel === k, isToday = tdy === k;
             return (
               <button key={i} onClick={() => setSel(k)} className={`h-14 sm:h-16 rounded-lg border p-1 text-left flex flex-col justify-between transition ${isSel ? "border-primary bg-primary-light" : "border-gray-200 hover:bg-gray-50"} ${isToday ? "ring-2 ring-primary" : ""}`}>
                 <div className="flex justify-between items-start"><span className="text-xs font-medium">{c}</span>{x?.invoices > 0 && <span className="text-[10px] leading-none rounded px-1 py-0.5 bg-primary" style={{ color: "var(--on-primary)" }}>{x.invoices}</span>}</div>

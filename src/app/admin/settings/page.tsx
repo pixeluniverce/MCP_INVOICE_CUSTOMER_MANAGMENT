@@ -19,13 +19,15 @@ export default function Settings() {
       <ThemeCard f={f} setF={setF} />
       <InvoiceLookCard f={f} setF={setF} />
       <BankCard f={f} setF={setF} />
+      <Card title="Customer catalog"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.catalog_show_prices !== false} onChange={e => setF({ ...f, catalog_show_prices: e.target.checked })} /> Show prices to customers in their catalog and catalog PDF</label><p className="text-xs text-gray-500 mt-2">Each customer sees only their own price (their special price, else their price list, else the default rate). Untick to show the catalog without prices.</p></Card>
       <BranchesCard />
       <Card title="Company details"><div className="grid sm:grid-cols-2 gap-3">{I("name", "Company name")}{I("mobile", "Mobile")}{I("address", "Address")}{I("email", "Email")}{I("gstin", "GSTIN")}{I("state", "State")}{I("state_code", "State code")}</div></Card>
       <Card title="Invoice settings"><div className="grid sm:grid-cols-3 gap-3">{I("invoice_prefix", "Invoice prefix")}{I("next_invoice", "Next invoice number", "number")}{I("payment_terms", "Payment terms")}</div><p className="text-xs text-gray-500 mt-2">Invoice numbers are generated automatically and safely (no duplicates).</p></Card>
       <Card title="GST defaults (used for new invoices only)">
         <label className="flex items-center gap-2 mb-3"><input type="checkbox" checked={!!f.gst_enabled} onChange={set("gst_enabled")} /> Enable GST by default</label>
         <div className="grid sm:grid-cols-4 gap-3"><div><label className="label">Default type</label><select className="input" value={f.gst_type} onChange={set("gst_type")}><option value="CGST_SGST">CGST + SGST</option><option value="IGST">IGST</option></select></div>{I("cgst", "CGST %", "number")}{I("sgst", "SGST %", "number")}{I("igst", "IGST %", "number")}</div></Card>
-      <Card title="WhatsApp Business Cloud API">
+      <WaModeCard f={f} setF={setF} />
+      <Card title="WhatsApp Business Cloud API (official)">
         <div className="grid sm:grid-cols-2 gap-3">{I("wa_phone", "Business phone number")}{I("wa_phone_id", "Phone Number ID")}{I("wa_waba_id", "WhatsApp Business Account ID")}{I("wa_api_version", "API version", "text", "v21.0")}
           {I("wa_token", "Meta access token", "password", f.wa_token_set ? "•••••• saved (leave blank to keep)" : "Paste permanent token")}{I("wa_verify_token", "Webhook verify token", "password", f.wa_verify_token_set ? "•••••• saved" : "Any secret string you choose")}
           {I("wa_app_secret", "Meta App Secret (verifies webhook signatures)", "password", f.wa_app_secret_set ? "•••••• saved" : "Recommended")}{I("wa_template_name", "Approved template name (optional)")}{I("wa_template_lang", "Template language", "text", "en")}</div>
@@ -131,6 +133,25 @@ function BankCard({ f, setF }: { f: any; setF: (v: any) => void }) {
     <Card title="Bank details (printed on invoices)">
       <div className="grid sm:grid-cols-3 gap-3">{I("bank_name", "Bank name")}{I("bank_account_name", "Account holder name")}{I("bank_account_no", "Account number")}{I("bank_ifsc", "IFSC code")}{I("bank_branch", "Bank branch")}{I("bank_upi", "UPI ID (optional)", "name@bank")}</div>
       <p className="text-xs text-gray-500 mt-2">GST invoices show these details by default. For invoices without GST, tick “Show bank details on this invoice” when you create it. You can switch it on or off for any invoice.</p>
+    </Card>
+  );
+}
+
+function WaModeCard({ f, setF }: { f: any; setF: (v: any) => void }) {
+  const mode = f.wa_mode === "device" ? "device" : "cloud";
+  return (
+    <Card title="WhatsApp sending method">
+      <div className="flex flex-col gap-2 text-sm">
+        <label className="flex items-start gap-2"><input type="radio" className="mt-1" checked={mode === "cloud"} onChange={() => setF({ ...f, wa_mode: "cloud" })} /><span><b>Official Cloud API</b> (recommended) – approved by WhatsApp, safe for your number. Needs the Meta setup below.</span></label>
+        <label className="flex items-start gap-2"><input type="radio" className="mt-1" checked={mode === "device"} onChange={() => setF({ ...f, wa_mode: "device" })} /><span><b>Linked phone</b> – link your own WhatsApp by scanning a QR code (like WhatsApp Web) and send directly from your number.</span></label>
+      </div>
+      {mode === "device" && <div className="mt-3 space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div><label className="label">Linked-phone service URL</label><input className="input" value={f.wa_bridge_url ?? ""} onChange={e => setF({ ...f, wa_bridge_url: e.target.value })} placeholder="https://wa.yourdomain.com" /></div>
+          <div><label className="label">Service key (BRIDGE_KEY)</label><input className="input" type="password" value={f.wa_bridge_key ?? ""} onChange={e => setF({ ...f, wa_bridge_key: e.target.value })} placeholder={f.wa_bridge_key_set ? "•••••• saved (leave blank to keep)" : "Same key you set on the service"} /></div>
+        </div>
+        <div className="text-xs text-amber-800 bg-amber-50 rounded-lg p-3 space-y-1"><div><b>Please note:</b> this uses the unofficial WhatsApp Web method. WhatsApp does not approve it, so your number can be restricted or banned. Send only to customers who expect your messages and avoid bulk or promotional sending.</div><div>It needs the small <b>whatsapp-bridge</b> service (included in the project folder) running 24/7 on its own server with a disk. It cannot run on Vercel. After saving, open the <b>WhatsApp</b> page to scan the QR code.</div></div>
+      </div>}
     </Card>
   );
 }

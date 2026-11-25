@@ -100,6 +100,22 @@ ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_ifsc TEXT;
 ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_branch TEXT;
 ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS bank_upi TEXT;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_bank BOOLEAN;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_v INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS show_in_catalog BOOLEAN NOT NULL DEFAULT TRUE;
+CREATE TABLE IF NOT EXISTS price_lists(
+  id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE, active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+INSERT INTO price_lists(name) VALUES('Retail'),('Wholesale'),('Bulk') ON CONFLICT (name) DO NOTHING;
+CREATE TABLE IF NOT EXISTS price_list_items(
+  id SERIAL PRIMARY KEY, price_list_id INTEGER NOT NULL REFERENCES price_lists(id) ON DELETE CASCADE, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  rate NUMERIC(14,2) NOT NULL CHECK (rate>=0), UNIQUE(price_list_id, product_id));
+CREATE INDEX IF NOT EXISTS idx_pli_product ON price_list_items(product_id);
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS price_list_id INTEGER REFERENCES price_lists(id) ON DELETE SET NULL;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS catalog_show_prices BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS wa_mode TEXT DEFAULT 'cloud';
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS wa_bridge_url TEXT;
+ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS wa_bridge_key TEXT;
 
 -- First admin login: username admin / temporary password Admin@12345 (must be changed at first login)
 INSERT INTO users(username, password_hash, role, must_change)

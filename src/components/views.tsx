@@ -196,6 +196,7 @@ export function CustomerTable({ outstanding }: { outstanding?: boolean }) {
 export function CustomerForm({ initial, onSaved, onCancel }: { initial?: any; onSaved: (id?: number) => void; onCancel?: () => void }) {
   const [f, setF] = useState<any>(initial || { name: "", mobile: "", alt_mobile: "", address: "", city: "", state: "Gujarat", pin: "", gstin: "", opening_balance: 0, notes: "", whatsapp_optin: true, active: true, create_login: false, username: "", password: "" });
   const [err, setErr] = useState(""), [busy, setBusy] = useState(false);
+  const { data: pls } = useApi<any>("/api/pricelists?lite=1");
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
   async function save() {
     setBusy(true); setErr("");
@@ -205,7 +206,7 @@ export function CustomerForm({ initial, onSaved, onCancel }: { initial?: any; on
   return (
     <div className="space-y-3">
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {I("name", "Customer name *")}{I("mobile", "Mobile number *")}{I("alt_mobile", "Alternate number")}{I("address", "Address")}{I("city", "City")}{I("state", "State")}{I("pin", "PIN code")}{I("gstin", "GSTIN")}{I("opening_balance", "Opening balance (₹)", "number")}{I("notes", "Notes")}
+        {I("name", "Customer name *")}{I("mobile", "Mobile number *")}{I("alt_mobile", "Alternate number")}{I("address", "Address")}{I("city", "City")}{I("state", "State")}{I("pin", "PIN code")}{I("gstin", "GSTIN")}{I("opening_balance", "Opening balance (₹)", "number")}{I("notes", "Notes")}<div><label className="label">Price list</label><select className="input" value={f.price_list_id ?? ""} onChange={e => setF({ ...f, price_list_id: e.target.value })}><option value="">None (default rates)</option>{(pls?.rows || []).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
       </div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!f.whatsapp_optin} onChange={set("whatsapp_optin")} /> Customer has agreed to receive WhatsApp messages</label>
       {initial && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active !== false} onChange={set("active")} /> Customer active</label>}

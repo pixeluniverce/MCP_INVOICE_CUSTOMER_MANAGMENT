@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: "📊" }, { href: "/admin/invoices/new", label: "New Invoice", icon: "➕" }, { href: "/admin/invoices", label: "All Invoices", icon: "🧾" },
   { href: "/admin/payments", label: "Payments", icon: "💰" }, { href: "/admin/outstanding", label: "Outstanding", icon: "⏳" }, { href: "/admin/customers", label: "Customers", icon: "👥" },
-  { href: "/admin/products", label: "Products", icon: "📦" }, { href: "/admin/challans", label: "Delivery Challans", icon: "🚚" }, { href: "/admin/whatsapp", label: "WhatsApp", icon: "💬" },
+  { href: "/admin/products", label: "Products & Catalog", icon: "📦" }, { href: "/admin/pricelists", label: "Price Lists", icon: "🏷️" }, { href: "/admin/challans", label: "Delivery Challans", icon: "🚚" }, { href: "/admin/whatsapp", label: "WhatsApp", icon: "💬" },
   { href: "/admin/reports", label: "Reports", icon: "📈" }, { href: "/admin/settings", label: "Settings", icon: "⚙️" },
 ];
 export default async function Layout({ children }: { children: React.ReactNode }) {

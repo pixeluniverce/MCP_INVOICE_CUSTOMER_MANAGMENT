@@ -1,6 +1,7 @@
 import { q } from "@/lib/db";
 import { route, HttpError } from "@/lib/api";
 import { sendWA } from "@/lib/wasend";
+export const maxDuration = 60;
 export const POST = route(["admin"], async (_r, { s, params }) => {
   const m = (await q("SELECT * FROM whatsapp_messages WHERE id=$1", [Number(params.id)]))[0];
   if (!m) throw new HttpError(404, "Message not found");

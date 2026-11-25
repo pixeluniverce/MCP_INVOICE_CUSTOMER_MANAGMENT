@@ -38,7 +38,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
   const { data: prods } = useApi<any>("/api/products?active=1");
   const { data: brs } = useApi<any>("/api/branches?active=1");
   const { data: ex } = useApi<any>(id ? `/api/invoices/${id}` : null);
-  const [cust, setCust] = useState<any>(null), [prices, setPrices] = useState<any>({}), [savePrices, setSavePrices] = useState(false), [branchId, setBranchId] = useState(""), [reason, setReason] = useState("");
+  const [cust, setCust] = useState<any>(null), [prices, setPrices] = useState<any>({}), [priceSrc, setPriceSrc] = useState<any>({}), [savePrices, setSavePrices] = useState(false), [branchId, setBranchId] = useState(""), [reason, setReason] = useState("");
   const [f, setF] = useState<any>({ date: today(), due_date: "", place_of_supply: "", gst_enabled: false, gst_type: "CGST_SGST", cgst: 9, sgst: 9, igst: 18, other_charges: 0, other_label: "", less_amount: "", less_label: "", notes: "" });
   const [items, setItems] = useState<any[]>([{ ...blankItem }]);
   const [pay, setPay] = useState<any>({ amount: "", date: today(), mode: "Cash", reference: "" });
@@ -64,7 +64,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
   }, [ex, st]);
   useEffect(() => {
     if (!cust) { setPrices({}); return; }
-    api(`/api/customers/${cust.id}/prices`).then(j => { const m: any = {}; j.rows.forEach((r: any) => m[r.product_id] = r.rate); setPrices(m); if (!editing) setItems(its => its.map(it => it.product_id && m[it.product_id] != null ? { ...it, rate: m[it.product_id] } : it)); }).catch(() => {});
+    api(`/api/customers/${cust.id}/prices`).then(j => { const m: any = {}, src: any = {}; Object.entries(j.tier?.rates || {}).forEach(([k, v]) => { m[k] = v; src[k] = j.tier.list_name; }); j.rows.forEach((r: any) => { m[r.product_id] = r.rate; src[r.product_id] = "Customer"; }); setPrices(m); setPriceSrc(src); if (!editing) setItems(its => its.map(it => it.product_id && m[it.product_id] != null ? { ...it, rate: m[it.product_id] } : it)); }).catch(() => {});
   }, [cust]);
 
   function pick(c: any) { setCust(c); if (!editing) setF((x: any) => ({ ...x, place_of_supply: c.state || x.place_of_supply })); }
@@ -113,7 +113,7 @@ export default function InvoiceForm({ id }: { id?: string }) {
             <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
               <div><label className="label">Qty</label><input className="input" type="number" step="any" value={it.qty} onChange={e => setI(n, "qty", e.target.value)} /></div>
               <div><label className="label">Unit</label><input className="input" value={it.unit} onChange={e => setI(n, "unit", e.target.value)} /></div>
-              <div><label className="label">Rate</label><input className="input" type="number" step="any" value={it.rate} onChange={e => setI(n, "rate", e.target.value)} />{it.product_id && prices[it.product_id] != null && <div className="text-[10px] text-primary mt-0.5">Customer price{Number(it.rate) !== prices[it.product_id] ? " (changed)" : ""}</div>}</div>
+              <div><label className="label">Rate</label><input className="input" type="number" step="any" value={it.rate} onChange={e => setI(n, "rate", e.target.value)} />{it.product_id && prices[it.product_id] != null && <div className="text-[10px] text-primary mt-0.5">{priceSrc[it.product_id] || "Customer"} price{Number(it.rate) !== prices[it.product_id] ? " (changed)" : ""}</div>}</div>
               <div><label className="label">Discount ₹</label><input className="input" type="number" step="any" value={it.discount} onChange={e => setI(n, "discount", e.target.value)} /></div>
               {f.gst_enabled && <div><label className="label">GST % (optional override)</label><input className="input" type="number" step="any" value={it.gst_rate} onChange={e => setI(n, "gst_rate", e.target.value)} placeholder="default" /></div>}
               <div className="flex items-end justify-between"><div className="text-sm font-medium">{inr((Number(it.qty) || 0) * (Number(it.rate) || 0) - (Number(it.discount) || 0))}</div>{items.length > 1 && <button className="btn-danger btn-sm" onClick={() => setItems(items.filter((_, i) => i !== n))}>Remove</button>}</div>

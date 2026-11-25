@@ -143,3 +143,13 @@ export async function challanPdf(co: any, ch: any, items: any[]) {
   if (ch.notes) { d.t("Notes: " + ch.notes, d.M, d.y, { size: 8 }); d.y -= 12; }
   d.t("Goods received in good condition.", d.M, d.y - 6, { size: 8 }); d.sign("Receiver Signature"); return d.save();
 }
+
+export async function catalogPdf(co: any, rows: any[], title: string, showPrices: boolean) {
+  const d = await Doc.make(co, title);
+  const cols: Col[] = showPrices
+    ? [{ h: "#", w: 28 }, { h: "Item", w: 215 }, { h: "Category", w: 110 }, { h: "Unit", w: 52 }, { h: "Rate", w: 110, a: "r" }]
+    : [{ h: "#", w: 28 }, { h: "Item", w: 260 }, { h: "Category", w: 150 }, { h: "Unit", w: 77 }];
+  d.table(cols, rows.map((r, i) => showPrices ? [i + 1, r.name, r.category || "", r.unit, Number(r.price).toFixed(2)] : [i + 1, r.name, r.category || "", r.unit]));
+  d.t("Prices are in Rs. and may change without notice.", d.M, d.y, { size: 8 }); d.y -= 12;
+  return d.save();
+}

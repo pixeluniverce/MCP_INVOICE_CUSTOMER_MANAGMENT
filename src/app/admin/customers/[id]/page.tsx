@@ -24,6 +24,7 @@ export default function CustomerPage() {
           <Link className="btn" href={`/admin/customers/${id}/ledger`}>Ledger</Link>
           <WaBtn type="statement" customerId={Number(id)} label="Send Account Statement" className="btn" />
           <WaBtn type="reminder" customerId={Number(id)} label="Send Payment Reminder" className="btn" onDone={reload} />
+          <WaBtn type="catalog" customerId={Number(id)} label="Send Catalog" className="btn" />
         </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><Stat label="Total Purchase" value={inr(c.purchase)} tone="blue" /><Stat label="Total Paid" value={inr(c.paid)} tone="green" /><Stat label="Total Outstanding" value={inr(c.outstanding)} tone="red" /><Stat label="Total Bills" value={c.bills} /></div>

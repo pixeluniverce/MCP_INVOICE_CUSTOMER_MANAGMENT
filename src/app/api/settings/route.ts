@@ -4,8 +4,8 @@ import { publicSettings } from "@/lib/data";
 
 export const GET = route(["admin"], async () => publicSettings());
 
-const TEXT = ["name", "address", "mobile", "email", "gstin", "state", "state_code", "invoice_prefix", "payment_terms", "wa_phone", "wa_phone_id", "wa_waba_id", "wa_api_version", "wa_template_name", "wa_template_lang", "signature_label", "bank_name", "bank_account_name", "bank_account_no", "bank_ifsc", "bank_branch", "bank_upi"];
-const SECRET = ["wa_token", "wa_verify_token", "wa_app_secret"]; // only overwritten when a new value is typed
+const TEXT = ["name", "address", "mobile", "email", "gstin", "state", "state_code", "invoice_prefix", "payment_terms", "wa_phone", "wa_phone_id", "wa_waba_id", "wa_api_version", "wa_template_name", "wa_template_lang", "signature_label", "bank_name", "bank_account_name", "bank_account_no", "bank_ifsc", "bank_branch", "bank_upi", "wa_mode", "wa_bridge_url"];
+const SECRET = ["wa_token", "wa_verify_token", "wa_app_secret", "wa_bridge_key"]; // only overwritten when a new value is typed
 
 export const PUT = route(["admin"], async (req, { s }) => {
   const b = await body(req); const sets: string[] = [], a: any[] = [];
@@ -21,7 +21,7 @@ export const PUT = route(["admin"], async (req, { s }) => {
     if (b[k] && !/^#[0-9a-fA-F]{6}$/.test(b[k])) throw new HttpError(400, "Invalid colour value");
     add(k, b[k] || null);
   }
-  for (const k of ["inv_show_logo", "inv_show_signature"]) if (k in b) add(k, !!b[k]);
+  for (const k of ["inv_show_logo", "inv_show_signature", "catalog_show_prices"]) if (k in b) add(k, !!b[k]);
   if ("signature" in b) {
     if (!b.signature) add("signature", null);
     else if (typeof b.signature === "string" && b.signature.length <= 800000 && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(b.signature)) add("signature", b.signature);
@@ -31,6 +31,7 @@ export const PUT = route(["admin"], async (req, { s }) => {
   if (["CGST_SGST", "IGST"].includes(b.gst_type)) add("gst_type", b.gst_type);
   for (const k of ["cgst", "sgst", "igst"]) if (k in b) add(k, Math.min(100, Math.max(0, num(b[k]))));
   if ("next_invoice" in b && num(b.next_invoice) >= 1) add("next_invoice", Math.floor(num(b.next_invoice)));
+  if (b.wa_mode && !["cloud", "device"].includes(b.wa_mode)) throw new HttpError(400, "Invalid WhatsApp mode");
   if (sets.length) await q(`UPDATE company_settings SET ${sets.join(",")} WHERE id=1`, a);
   await log(s.uid, "SETTINGS_UPDATED"); return { ok: true };
 });

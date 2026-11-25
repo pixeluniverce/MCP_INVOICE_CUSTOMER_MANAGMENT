@@ -1,6 +1,7 @@
 import { route, qs, isDate, HttpError } from "@/lib/api";
-import { getSettings, getInvoice, getPayment, getChallan, getLedger, listInvoices } from "@/lib/data";
-import { invoicePdf, receiptPdf, statementPdf, challanPdf } from "@/lib/pdf";
+import { q } from "@/lib/db";
+import { getSettings, getInvoice, getPayment, getChallan, getLedger, listInvoices, getCatalog } from "@/lib/data";
+import { invoicePdf, receiptPdf, statementPdf, challanPdf, catalogPdf } from "@/lib/pdf";
 
 // All PDFs are generated on demand from the saved database records (never from client-supplied numbers).
 export const GET = route(["admin", "customer"], async (req, { s, params }) => {
@@ -17,6 +18,12 @@ export const GET = route(["admin", "customer"], async (req, { s, params }) => {
       else bytes = await statementPdf(co, led);
       name = `${params.kind === "outstanding" ? "Outstanding" : "Statement"}-${led.customer.name.replace(/\W+/g, "_")}`; break;
     }
+    case "catalog": { // customers always get their own prices; admin can pick a price list (?list=ID) or a customer (?customer_id=ID)
+      const showPrices = s.role === "admin" || (co as any).catalog_show_prices !== false, listId = Number(p.get("list")) || null, cust = Number(p.get("customer_id")) || null;
+      const rows = await getCatalog(scope ? { cid: scope } : cust ? { cid: cust } : { listId });
+      let title = "PRODUCT CATALOG";
+      if (!scope && !cust && listId) { const l = (await q("SELECT name FROM price_lists WHERE id=$1", [listId]))[0]; if (l) title = "PRICE LIST - " + l.name.toUpperCase(); }
+      bytes = await catalogPdf(co, rows, title, showPrices); name = "Catalog"; break; }
     default: throw new HttpError(404, "Unknown document");
   }
   return new Response(bytes as any, { headers: { "Content-Type": "application/pdf", "Content-Disposition": `${p.get("inline") ? "inline" : "attachment"}; filename="${name}.pdf"`, "Cache-Control": "private, no-store" } });
