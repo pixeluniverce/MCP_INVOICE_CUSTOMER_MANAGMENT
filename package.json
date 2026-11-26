@@ -1,5 +1,5 @@
 {
-  "name": "mahadev-cement-product",
+  "name": "Mahadev-Cement-Product",
   "version": "1.0.0",
   "private": true,
   "scripts": { "dev": "next dev", "build": "next build", "start": "next start", "test:ems": "node scripts/test-engine.mjs" },
